@@ -30,6 +30,14 @@ Workflow file: [example_workflows/Comfy-DeepSeek-API.json](example_workflows/Com
 
 Open it from Workflow → Browse Templates, or drag the JSON file onto the canvas.
 
+## Sponsor
+
+If this plugin saves you time, buy me a coffee ☕ (Alipay)
+
+![Alipay QR code](assets/donate-alipay.jpg)
+
+Special thanks to **DeepSeek** for the stable and easy-to-use API.
+
 ---
 
 ## 中文
@@ -62,14 +70,11 @@ Open it from Workflow → Browse Templates, or drag the JSON file onto the canva
 
 可从 Workflow → Browse Templates 打开，或直接把 JSON 拖进画布。
 
----
-
-## 支持 / Sponsor
+### 支持这个项目
 
 如果它帮你省了时间，欢迎请我喝杯咖啡 ☕（支付宝）
-If this saves you time, buy me a coffee ☕ (Alipay)
 
-![支付宝收款码 / Alipay](assets/donate-alipay.jpg)
+![支付宝收款码](assets/donate-alipay.jpg)
 
-> 特别鸣谢 **DeepSeek** 提供稳定、好用的 API 服务。
-> Special thanks to **DeepSeek** for the stable and easy-to-use API.
+特别鸣谢 **DeepSeek** 提供稳定、好用的 API 服务。
+
