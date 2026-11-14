@@ -22,7 +22,13 @@ Three nodes under Add Node → DeepSeek:
 
 Defaults are tuned for lowest cost and latency: wire images and hit Run for image understanding; just edit the default query in the search node.
 
-Example workflows: example_workflows/ (Workflow → Browse Templates).
+## Example
+
+![Comfy-DeepSeek-API workflow](example_workflows/Comfy-DeepSeek-API.jpg)
+
+Workflow file: [example_workflows/Comfy-DeepSeek-API.json](example_workflows/Comfy-DeepSeek-API.json)
+
+Open it from Workflow → Browse Templates, or drag the JSON file onto the canvas.
 
 ---
 
@@ -48,5 +54,11 @@ Example workflows: example_workflows/ (Workflow → Browse Templates).
 
 默认参数已按最省钱、最快设好：接上图片点 Run 就是图像理解；搜索节点把默认查询词改掉即可用。
 
-示例工作流在 example_workflows/，在 Workflow → Browse Templates 里打开。
+### 示例
+
+![Comfy-DeepSeek-API 工作流](example_workflows/Comfy-DeepSeek-API.jpg)
+
+工作流文件：[example_workflows/Comfy-DeepSeek-API.json](example_workflows/Comfy-DeepSeek-API.json)
+
+可从 Workflow → Browse Templates 打开，或直接把 JSON 拖进画布。
 
