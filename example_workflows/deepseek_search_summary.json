@@ -1,0 +1,196 @@
+{
+  "last_node_id": 3,
+  "last_link_id": 2,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "DeepSeekAPI_Search",
+      "pos": [
+        80,
+        90
+      ],
+      "size": [
+        420,
+        380
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "json",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "usage",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DeepSeekAPI_Search"
+      },
+      "widgets_values": [
+        "DeepSeek 最新模型是什么？有哪些新特性？",
+        "DeepSeek V4 模型 发布",
+        "",
+        "",
+        "",
+        false,
+        "",
+        "",
+        "",
+        "",
+        "${DEEPSEEK_API_KEY}",
+        "https://api.deepseek.com",
+        5,
+        false
+      ]
+    },
+    {
+      "id": 2,
+      "type": "DeepSeekAPI_Model",
+      "pos": [
+        540,
+        90
+      ],
+      "size": [
+        430,
+        470
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "user_prompt",
+          "type": "STRING",
+          "link": 1,
+          "widget": {
+            "name": "user_prompt"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "reasoning",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        },
+        {
+          "name": "usage",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DeepSeekAPI_Model"
+      },
+      "widgets_values": [
+        "deepseek-flash",
+        "${DEEPSEEK_API_KEY}",
+        "https://api.deepseek.com",
+        "你是严谨的中文科技编辑。用户会给你一段网页搜索结果，请用中文总结 5 条要点，并给出一句话结论。",
+        "（这里会被搜索节点的结果替换）",
+        "disabled",
+        "low",
+        1.0,
+        1024,
+        "low",
+        1024,
+        5,
+        false,
+        false
+      ]
+    },
+    {
+      "id": 3,
+      "type": "SaveText",
+      "pos": [
+        1020,
+        90
+      ],
+      "size": [
+        380,
+        380
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveText"
+      },
+      "widgets_values": [
+        "DeepSeek",
+        "txt"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "STRING"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.0,
+      "offset": [
+        0,
+        0
+      ]
+    }
+  },
+  "version": 0.4
+}

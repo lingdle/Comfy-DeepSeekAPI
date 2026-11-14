@@ -1,0 +1,22 @@
+[project]
+name = "Comfy-DeepSeekAPI"
+version = "0.6.7"
+description = "ComfyUI nodes for DeepSeek API: chat (text + images + web tools), web search, and account balance"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+dependencies = []
+classifiers = ["Operating System :: OS Independent"]
+
+[project.urls]
+Repository = "https://github.com/lingdle/Comfy-DeepSeekAPI"
+Documentation = "https://github.com/lingdle/Comfy-DeepSeekAPI#readme"
+"Bug Tracker" = "https://github.com/lingdle/Comfy-DeepSeekAPI/issues"
+
+[tool.comfy]
+PublisherId = "lingdle"
+DisplayName = "Comfy-DeepSeekAPI"
+Icon = "https://raw.githubusercontent.com/lingdle/Comfy-DeepSeekAPI/main/assets/icon.svg"
+Banner = "https://raw.githubusercontent.com/lingdle/Comfy-DeepSeekAPI/main/assets/banner.svg"
+# 可选：实测最低版本后再启用
+# requires-comfyui = ">=0.3.60"
+

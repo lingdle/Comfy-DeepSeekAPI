@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 540" width="1260" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#16305c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f9dff"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1260" height="540" fill="url(#bg)"/>
+  <circle cx="1080" cy="120" r="200" fill="url(#accent)" opacity="0.10"/>
+  <circle cx="120" cy="470" r="180" fill="url(#accent)" opacity="0.08"/>
+
+  <text x="90" y="210" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="64" font-weight="800" fill="#eaf2ff">DeepSeek API for ComfyUI</text>
+  <text x="92" y="268" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="26" fill="#9fc4ff">一个插件，三个节点：模型 · 搜索 · 额度</text>
+
+  <g font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif" font-size="24" fill="#dbe9ff">
+    <rect x="92" y="330" width="300" height="70" rx="18" fill="#122murky" opacity="0"/>
+    <rect x="92" y="330" width="300" height="70" rx="18" fill="#12233f" stroke="#2f4c7d"/>
+    <text x="122" y="375">模型 API（文本 + 图片）</text>
+
+    <rect x="412" y="330" width="300" height="70" rx="18" fill="#12233f" stroke="#2f4c7d"/>
+    <text x="442" y="375">搜索 API（网页结果）</text>
+
+    <rect x="732" y="330" width="260" height="70" rx="18" fill="#12233f" stroke="#2f4c7d"/>
+    <text x="762" y="375">额度 API（余额）</text>
+  </g>
+
+  <text x="92" y="466" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="20" fill="#6f8dbb">deepseek-flash · 支持联网工具 · 内置用量与费用估算</text>
+</svg>
+
