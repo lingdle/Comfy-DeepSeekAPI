@@ -62,3 +62,14 @@ Open it from Workflow → Browse Templates, or drag the JSON file onto the canva
 
 可从 Workflow → Browse Templates 打开，或直接把 JSON 拖进画布。
 
+---
+
+## 支持 / Sponsor
+
+如果它帮你省了时间，欢迎请我喝杯咖啡 ☕（支付宝）
+If this saves you time, buy me a coffee ☕ (Alipay)
+
+![支付宝收款码 / Alipay](assets/donate-alipay.jpg)
+
+> 特别鸣谢 **DeepSeek** 提供稳定、好用的 API 服务。
+> Special thanks to **DeepSeek** for the stable and easy-to-use API.
