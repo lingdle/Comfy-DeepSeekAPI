@@ -32,9 +32,11 @@ Open it from Workflow → Browse Templates, or drag the JSON file onto the canva
 
 ## Sponsor
 
-If this plugin saves you time, buy me a coffee ☕ (Alipay)
+If this plugin saves you time, buy me a coffee ☕
 
-![Alipay QR code](assets/donate-alipay.jpg)
+| Alipay | WeChat Pay |
+|---|---|
+| ![Alipay QR code](assets/donate-alipay.jpg) | ![WeChat Pay QR code](assets/donate-wechat.jpg) |
 
 Special thanks to **DeepSeek** for the stable and easy-to-use API.
 
@@ -72,9 +74,11 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 
 ### 支持这个项目
 
-如果它帮你省了时间，欢迎请我喝杯咖啡 ☕（支付宝）
+如果它帮你省了时间，欢迎请我喝杯咖啡 ☕
 
-![支付宝收款码](assets/donate-alipay.jpg)
+| 支付宝 | 微信支付 |
+|---|---|
+| ![支付宝收款码](assets/donate-alipay.jpg) | ![微信收款码](assets/donate-wechat.jpg) |
 
 特别鸣谢 **DeepSeek** 提供稳定、好用的 API 服务。
 
