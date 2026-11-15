@@ -1,6 +1,12 @@
 # 更新记录
 
-当前版本：**1.0.9**（2026-11-15）
+当前版本：**1.0.10**（2026-11-15）
+
+**1.0.10**（2026-11-15）
+
+- 模型节点：9 个不常用参数收进「Advanced」折叠区（base_url、reasoning_effort、temperature、max_tokens、image_detail、image_max_side、max_images、web_search、read_url），面板默认只留 6 个
+- 搜索节点：10 个筛选控件收进 Advanced（站点排除、排除词、精确短语、语言、日期、base_url、条数、正文），面板默认只留 4 个
+- 新增 1 项折叠区测试（共 41 项）
 
 **1.0.9**（2026-11-15）
 

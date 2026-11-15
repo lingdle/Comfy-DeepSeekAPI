@@ -100,6 +100,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     "base_url",
                     default=DEFAULT_BASE_URL,
                     tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
+                    advanced=True,
                 ),
                 io.Image.Input(
                     "images",
@@ -132,6 +133,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     options=["low", "high", "max"],
                     default="low",
                     tooltip="仅在 thinking=enabled 时生效；low 最省钱",
+                    advanced=True,
                 ),
                 io.Float.Input(
                     "temperature",
@@ -140,6 +142,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     max=2.0,
                     step=0.1,
                     tooltip="仅在 thinking=disabled 时生效；提示词扩写建议 1.0-1.3",
+                    advanced=True,
                 ),
                 io.Int.Input(
                     "max_tokens",
@@ -148,12 +151,14 @@ class DeepSeekModelNode(io.ComfyNode):
                     max=32768,
                     step=64,
                     tooltip="单次输出上限；越大越慢越贵。只有输出不足时才需要调大",
+                    advanced=True,
                 ),
                 io.Combo.Input(
                     "image_detail",
                     options=["low", "high", "original", "auto"],
                     default="low",
                     tooltip="图片精度：low 会把图缩到 512x512，最省 token",
+                    advanced=True,
                 ),
                 io.Int.Input(
                     "image_max_side",
@@ -162,6 +167,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     max=2048,
                     step=64,
                     tooltip="上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分",
+                    advanced=True,
                 ),
                 io.Int.Input(
                     "max_images",
@@ -170,16 +176,19 @@ class DeepSeekModelNode(io.ComfyNode):
                     max=10,
                     step=1,
                     tooltip="最多发送几张图（images 是 batch 时按顺序取前 N 张）",
+                    advanced=True,
                 ),
                 io.Boolean.Input(
                     "web_search",
                     default=False,
                     tooltip="联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭",
+                    advanced=True,
                 ),
                 io.Boolean.Input(
                     "read_url",
                     default=False,
                     tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭",
+                    advanced=True,
                 ),
             ],
             outputs=[

@@ -1046,6 +1046,28 @@ def test_source_strings_stay_monolingual():
 
 
 
+@test
+def test_advanced_inputs_are_collapsed():
+    model = NS.DeepSeekModelNode.define_schema().kwargs
+    search = SEARCH.DeepSeekSearchNode.define_schema().kwargs
+
+    def ids(schema, advanced):
+        return [item["id"] for item in schema["inputs"] if bool(item.get("advanced")) is advanced]
+
+    assert ids(model, False) == [
+        "model",
+        "api_key",
+        "images",
+        "system_prompt",
+        "user_prompt",
+        "thinking",
+    ]
+    assert ids(search, False) == ["ori_question", "query", "site_include", "api_key"]
+    assert len(ids(model, True)) == 9
+    assert len(ids(search, True)) == 10
+
+
+
 def main():
     failures = []
     for func in TESTS:
