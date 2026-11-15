@@ -70,7 +70,7 @@ class DeepSeekBalanceNode(io.ComfyNode):
             description=(
                 "查询账户额度（GET /user/balance）。"
                 "输出一行汇总文本 + 接口原始 JSON（含 is_available、balance_infos 等全部字段）。"
-                "查询本身不消耗 token、不产生费用。"
+                "查询本身不消耗 token、不产生费用。\nQuery the account balance via GET /user/balance. Outputs a one-line summary plus the raw JSON response. The lookup costs no tokens and no money."
             ),
             search_aliases=["deepseek", "balance", "quota", "credit", "额度", "余额", "充值"],
             inputs=[
@@ -79,29 +79,29 @@ class DeepSeekBalanceNode(io.ComfyNode):
                     default=DEFAULT_API_KEY_PLACEHOLDER,
                     tooltip=(
                         "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
-                        "注意：该值会随工作流保存，分享工作流前请先清空。"
+                        "注意：该值会随工作流保存，分享工作流前请先清空。\nPaste sk-... directly, or env placeholder to read an environment variable. This value is saved in the workflow, so clear it before sharing."
                     ),
                 ),
                 io.String.Input(
                     "base_url",
                     default=DEFAULT_BASE_URL,
-                    tooltip="API 地址，默认 https://api.deepseek.com（填 /v1 结尾也行，节点会自动处理）",
+                    tooltip="API 地址，默认 https://api.deepseek.com（填 /v1 结尾也行，节点会自动处理）\nBase URL, default https://api.deepseek.com (a trailing /v1 is handled automatically)",
                 ),
                 io.Combo.Input(
                     "currency",
                     options=["auto", "CNY", "USD"],
                     default="auto",
-                    tooltip="汇总文本里显示哪个币种；auto = 优先 CNY，没有则取第一个。JSON 输出始终是完整返回",
+                    tooltip="汇总文本里显示哪个币种；auto = 优先 CNY，没有则取第一个。JSON 输出始终是完整返回\nWhich currency to show in the summary; auto = CNY first, otherwise the first entry. JSON output is always the full response",
                 ),
             ],
             outputs=[
                 io.String.Output(
                     display_name="text",
-                    tooltip="一行汇总，例如：额度：可用 ｜ CNY 81.00（赠送 10.00 / 充值 71.00）",
+                    tooltip="一行汇总，例如：额度：可用 ｜ CNY 81.00（赠送 10.00 / 充值 71.00）\nOne-line summary, e.g. balance: available | CNY 81.00 (granted 10.00 / topped up 71.00)",
                 ),
                 io.String.Output(
                     display_name="json",
-                    tooltip='接口原始 JSON，例如 {"is_available": true, "balance_infos": [...]}',
+                    tooltip='接口原始 JSON，例如\nRaw API response JSON, e.g. {"is_available": true, "balance_infos": [...]}',
                 ),
             ],
         )

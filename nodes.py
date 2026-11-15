@@ -68,7 +68,7 @@ class DeepSeekModelNode(io.ComfyNode):
             description=(
                 "调用 DeepSeek 云端模型（默认 deepseek-flash）。"
                 "支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。"
-                "默认关闭思考模式，省钱且快；需要更强的推理时把 thinking 改成 enabled。"
+                "默认关闭思考模式，省钱且快；需要更强的推理时把 thinking 改成 enabled。\nCall DeepSeek models (deepseek-flash by default): text chat, image understanding (up to max_images images) and optional web tools. Thinking is off by default for lower cost and latency."
             ),
             search_aliases=[
                 "deepseek",
@@ -86,52 +86,52 @@ class DeepSeekModelNode(io.ComfyNode):
                 io.String.Input(
                     "model",
                     default=DEFAULT_MODEL,
-                    tooltip="模型名称，例如 deepseek-flash（支持图片）或 deepseek-v4-pro（仅文本）",
+                    tooltip="模型名称，例如 deepseek-flash（支持图片）或 deepseek-v4-pro（仅文本）\nModel name, e.g. deepseek-flash (images supported) or deepseek-v4-pro (text only)",
                 ),
                 io.String.Input(
                     "api_key",
                     default=DEFAULT_API_KEY_PLACEHOLDER,
                     tooltip=(
                         "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
-                        "注意：该值会随工作流保存，分享工作流前请先清空。"
+                        "注意：该值会随工作流保存，分享工作流前请先清空。\nPaste sk-... directly, or env placeholder to read an environment variable. This value is saved in the workflow, so clear it before sharing."
                     ),
                 ),
                 io.String.Input(
                     "base_url",
                     default=DEFAULT_BASE_URL,
-                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
+                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）\nBase URL, default https://api.deepseek.com (a /v1 suffix also works)",
                 ),
                 io.Image.Input(
                     "images",
                     display_name="images",
                     optional=True,
-                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃",
+                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃\nOptional: one or more images. A batch is expanded in order; anything beyond max_images is dropped",
                 ),
                 io.String.Input(
                     "system_prompt",
                     default="你是一个图像理解助手",
                     multiline=True,
                     placeholder="系统提示词，默认：你是一个图像理解助手",
-                    tooltip="系统提示词，决定模型的角色与规则；默认按图像理解场景写好",
+                    tooltip="系统提示词，决定模型的角色与规则；默认按图像理解场景写好\nSystem prompt that sets the role and rules; the default is tuned for image understanding",
                 ),
                 io.String.Input(
                     "user_prompt",
                     default="图片上是什么？",
                     multiline=True,
                     placeholder="用户提示词，默认：图片上是什么？",
-                    tooltip="用户提示词；清空且不接图片会报错",
+                    tooltip="用户提示词；清空且不接图片会报错\nUser prompt; if cleared and no image is connected the node raises an error",
                 ),
                 io.Combo.Input(
                     "thinking",
                     options=["disabled", "enabled"],
                     default="disabled",
-                    tooltip="思考模式：disabled 最快最省；enabled 质量更高但更慢更贵",
+                    tooltip="思考模式：disabled 最快最省；enabled 质量更高但更慢更贵\nThinking mode: disabled is fastest and cheapest; enabled is better but slower and pricier",
                 ),
                 io.Combo.Input(
                     "reasoning_effort",
                     options=["low", "high", "max"],
                     default="low",
-                    tooltip="仅在 thinking=enabled 时生效；low 最省钱",
+                    tooltip="仅在 thinking=enabled 时生效；low 最省钱\nOnly used when thinking=enabled; low is the cheapest",
                 ),
                 io.Float.Input(
                     "temperature",
@@ -139,7 +139,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     min=0.0,
                     max=2.0,
                     step=0.1,
-                    tooltip="仅在 thinking=disabled 时生效；提示词扩写建议 1.0-1.3",
+                    tooltip="仅在 thinking=disabled 时生效；提示词扩写建议 1.0-1.3\nOnly used when thinking=disabled; 1.0-1.3 works well for prompt rewriting",
                 ),
                 io.Int.Input(
                     "max_tokens",
@@ -147,13 +147,13 @@ class DeepSeekModelNode(io.ComfyNode):
                     min=16,
                     max=32768,
                     step=64,
-                    tooltip="单次输出上限；越大越慢越贵。只有输出不足时才需要调大",
+                    tooltip="单次输出上限；越大越慢越贵。只有输出不足时才需要调大\nMax output tokens; larger is slower and pricier. Increase only when output is truncated",
                 ),
                 io.Combo.Input(
                     "image_detail",
                     options=["low", "high", "original", "auto"],
                     default="low",
-                    tooltip="图片精度：low 会把图缩到 512x512，最省 token",
+                    tooltip="图片精度：low 会把图缩到 512x512，最省 token\nImage detail: low downscales to 512x512, cheapest in tokens",
                 ),
                 io.Int.Input(
                     "image_max_side",
@@ -161,7 +161,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     min=256,
                     max=2048,
                     step=64,
-                    tooltip="上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分",
+                    tooltip="上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分\nDownscale the long side to this value before upload; one image caps at 1024 tokens",
                 ),
                 io.Int.Input(
                     "max_images",
@@ -169,30 +169,30 @@ class DeepSeekModelNode(io.ComfyNode):
                     min=1,
                     max=10,
                     step=1,
-                    tooltip="最多发送几张图（images 是 batch 时按顺序取前 N 张）",
+                    tooltip="最多发送几张图（images 是 batch 时按顺序取前 N 张）\nMax images to send (a batch is taken in order, first N kept)",
                 ),
                 io.Boolean.Input(
                     "web_search",
                     default=False,
-                    tooltip="联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭",
+                    tooltip="联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭\nWeb tool: let the model search the web and cite results (deepseek_web_search). Billed per call, off by default",
                 ),
                 io.Boolean.Input(
                     "read_url",
                     default=False,
-                    tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭",
+                    tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭\nWeb tool: let the model read links in your message (deepseek_read_url). Billed per call, off by default",
                 ),
             ],
             outputs=[
-                io.String.Output(display_name="text", tooltip="模型的最终回答"),
-                io.String.Output(display_name="reasoning", tooltip="思考模式的思维链（thinking=disabled 时为空）"),
-                io.String.Output(display_name="usage", tooltip="token 用量与估算费用"),
+                io.String.Output(display_name="text", tooltip="模型的最终回答\nThe model's final answer"),
+                io.String.Output(display_name="reasoning", tooltip="思考模式的思维链（thinking=disabled 时为空）\nChain of thought (empty when thinking=disabled)"),
+                io.String.Output(display_name="usage", tooltip="token 用量与估算费用\nToken usage and estimated cost"),
                 io.String.Output(
                     display_name="sources",
-                    tooltip="联网搜索/阅读到的来源（每行「标题 — URL」；未开启联网时为空）",
+                    tooltip="联网搜索/阅读到的来源（每行「标题 — URL」；未开启联网时为空）\nSources from web search/read, one title - URL per line (empty when web tools are off)",
                 ),
                 io.String.Output(
                     display_name="json",
-                    tooltip='接口原始返回 JSON（choices/usage/annotations 等全部字段）',
+                    tooltip='接口原始返回 JSON（choices/usage/annotations 等全部字段）\nRaw API response JSON (choices / usage / annotations, all fields)',
                 ),
             ],
         )
