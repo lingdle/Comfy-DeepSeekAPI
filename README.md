@@ -14,7 +14,7 @@ Node titles, descriptions and tooltips follow ComfyUI's interface language (Engl
 
 ## Usage
 
-Three nodes under Add Node → DeepSeek:
+Three nodes under Add Node → DeepSeekAPI:
 
 | Node | What it does | Outputs |
 |---|---|---|
@@ -58,7 +58,7 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 
 ### 使用
 
-三个节点，都在 Add Node → DeepSeek 下：
+三个节点，都在 Add Node → DeepSeekAPI 下：
 
 | 节点 | 作用 | 输出 |
 |---|---|---|

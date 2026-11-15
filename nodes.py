@@ -64,7 +64,7 @@ class DeepSeekModelNode(io.ComfyNode):
         return io.Schema(
             node_id=NODE_ID,
             display_name="DeepSeek 模型 API",
-            category="DeepSeek",
+            category="DeepSeekAPI",
             description=(
                 "调用 DeepSeek 云端模型（默认 deepseek-flash）。"
                 "支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。"

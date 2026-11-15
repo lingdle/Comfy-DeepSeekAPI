@@ -66,7 +66,7 @@ class DeepSeekBalanceNode(io.ComfyNode):
         return io.Schema(
             node_id=NODE_ID,
             display_name="DeepSeek 额度 API",
-            category="DeepSeek",
+            category="DeepSeekAPI",
             description=(
                 "查询账户额度（GET /user/balance）。"
                 "输出一行汇总文本 + 接口原始 JSON（含 is_available、balance_infos 等全部字段）。"

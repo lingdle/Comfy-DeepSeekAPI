@@ -33,7 +33,7 @@ class DeepSeekSearchNode(io.ComfyNode):
         return io.Schema(
             node_id=NODE_ID,
             display_name="DeepSeek 搜索 API",
-            category="DeepSeek",
+            category="DeepSeekAPI",
             description=(
                 "调用 DeepSeek 网页搜索接口（POST /v1/tools/search）。"
                 "搜索语法不用手写：站点/排除/语言/日期都是独立控件，节点自动拼成 site:、-site:、lang:、after: 等。"

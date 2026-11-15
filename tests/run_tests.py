@@ -367,7 +367,7 @@ def test_client_gives_up_after_retries():
 def test_schema_structure():
     schema = NS.DeepSeekModelNode.define_schema()
     assert schema.node_id == "DeepSeekAPI_Model"
-    assert schema.category == "DeepSeek"
+    assert schema.category == "DeepSeekAPI"
     assert schema.display_name
 
     inputs = {item["id"]: item for item in schema.inputs if item["kind"] == "input"}
@@ -601,7 +601,7 @@ def test_execute_rejects_pro_with_image():
 def test_search_schema_structure():
     schema = SEARCH.DeepSeekSearchNode.define_schema()
     assert schema.node_id == "DeepSeekAPI_Search"
-    assert schema.category == "DeepSeek"
+    assert schema.category == "DeepSeekAPI"
 
     order = [item["id"] for item in schema.inputs]
     assert order[:4] == ["question", "query", "after", "lang"]
