@@ -993,6 +993,59 @@ def test_balance_execute_currency_and_unavailable():
     assert json.loads(result.results[1])["is_available"] is False
 
 
+# ------------------------------------------------------------------ i18n 测试
+I18N_STEMS = [
+    ("DeepSeekAPI_Model", NS.DeepSeekModelNode),
+    ("DeepSeekAPI_Search", SEARCH.DeepSeekSearchNode),
+    ("DeepSeekAPI_Balance", BAL.DeepSeekBalanceNode),
+]
+
+
+def _load_locale(lang):
+    path = PKG_DIR / "locales" / lang / "nodeDefs.json"
+    assert path.exists(), "missing locale file: %s" % path
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@test
+def test_locale_files_cover_every_slot():
+    zh = _load_locale("zh")
+    en = _load_locale("en")
+    for node_id, node_cls in I18N_STEMS:
+        for lang, data in (("zh", zh), ("en", en)):
+            assert node_id in data, "%s missing in %s" % (node_id, lang)
+            entry = data[node_id]
+            assert entry.get("display_name"), "%s display_name empty (%s)" % (node_id, lang)
+            assert entry.get("description"), "%s description empty (%s)" % (node_id, lang)
+            schema = node_cls.define_schema().kwargs
+            for item in schema["inputs"]:
+                ident = item.get("id")
+                if not ident:
+                    continue
+                tooltip = entry.get("inputs", {}).get(ident, {}).get("tooltip")
+                assert tooltip, "%s.%s tooltip missing (%s)" % (node_id, ident, lang)
+            for index, item in enumerate(schema["outputs"]):
+                tooltip = entry.get("outputs", {}).get(str(index), {}).get("tooltip")
+                assert tooltip, "%s output %d tooltip missing (%s)" % (node_id, index, lang)
+
+
+@test
+def test_source_strings_stay_monolingual():
+    for node_id, node_cls in I18N_STEMS:
+        schema = node_cls.define_schema().kwargs
+        assert "\n" not in schema["display_name"], node_id
+        assert "\n" not in schema["description"], node_id
+        for item in schema["inputs"]:
+            tooltip = item.get("tooltip")
+            if tooltip:
+                assert "\n" not in tooltip, "%s.%s still bilingual" % (node_id, item.get("id"))
+        for index, item in enumerate(schema["outputs"]):
+            tooltip = item.get("tooltip")
+            if tooltip:
+                assert "\n" not in tooltip, "%s output %d still bilingual" % (node_id, index)
+
+
+
 def main():
     failures = []
     for func in TESTS:

@@ -1,0 +1,184 @@
+{
+  "DeepSeekAPI_Model": {
+    "display_name": "DeepSeek 模型 API",
+    "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。默认关闭思考模式，省钱且快；需要更强的推理时把 thinking 改成 enabled。",
+    "inputs": {
+      "model": {
+        "name": "model",
+        "tooltip": "模型名称，例如 deepseek-flash（支持图片）或 deepseek-v4-pro（仅文本）"
+      },
+      "api_key": {
+        "name": "api_key",
+        "tooltip": "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。注意：该值会随工作流保存，分享工作流前请先清空。"
+      },
+      "base_url": {
+        "name": "base_url",
+        "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
+      },
+      "images": {
+        "name": "images",
+        "tooltip": "可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃"
+      },
+      "system_prompt": {
+        "name": "system_prompt",
+        "tooltip": "系统提示词，决定模型的角色与规则；默认按图像理解场景写好"
+      },
+      "user_prompt": {
+        "name": "user_prompt",
+        "tooltip": "用户提示词；清空且不接图片会报错"
+      },
+      "thinking": {
+        "name": "thinking",
+        "tooltip": "思考模式：disabled 最快最省；enabled 质量更高但更慢更贵"
+      },
+      "reasoning_effort": {
+        "name": "reasoning_effort",
+        "tooltip": "仅在 thinking=enabled 时生效；low 最省钱"
+      },
+      "temperature": {
+        "name": "temperature",
+        "tooltip": "仅在 thinking=disabled 时生效；提示词扩写建议 1.0-1.3"
+      },
+      "max_tokens": {
+        "name": "max_tokens",
+        "tooltip": "单次输出上限；越大越慢越贵。只有输出不足时才需要调大"
+      },
+      "image_detail": {
+        "name": "image_detail",
+        "tooltip": "图片精度：low 会把图缩到 512x512，最省 token"
+      },
+      "image_max_side": {
+        "name": "image_max_side",
+        "tooltip": "上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分"
+      },
+      "max_images": {
+        "name": "max_images",
+        "tooltip": "最多发送几张图（images 是 batch 时按顺序取前 N 张）"
+      },
+      "web_search": {
+        "name": "web_search",
+        "tooltip": "联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭"
+      },
+      "read_url": {
+        "name": "read_url",
+        "tooltip": "联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "模型的最终回答"
+      },
+      "1": {
+        "tooltip": "思考模式的思维链（thinking=disabled 时为空）"
+      },
+      "2": {
+        "tooltip": "token 用量与估算费用"
+      },
+      "3": {
+        "tooltip": "联网搜索/阅读到的来源（每行「标题 — URL」；未开启联网时为空）"
+      },
+      "4": {
+        "tooltip": "接口原始返回 JSON（choices/usage/annotations 等全部字段）"
+      }
+    }
+  },
+  "DeepSeekAPI_Search": {
+    "display_name": "DeepSeek 搜索 API",
+    "description": "调用 DeepSeek 网页搜索接口（POST /v1/tools/search）。搜索语法不用手写：站点/排除/语言/日期都是独立控件，节点自动拼成 site:、-site:、lang:、after: 等。按次计费（约 ¥0.005/次），与返回条数无关。",
+    "inputs": {
+      "ori_question": {
+        "name": "ori_question",
+        "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
+      },
+      "query": {
+        "name": "query",
+        "tooltip": "搜索词（1-128 字符）。语法请用下面的筛选控件，节点会自动拼接"
+      },
+      "site_include": {
+        "name": "site_include",
+        "tooltip": "只在指定站点搜索，等价于 site:a OR site:b；直接粘网址也行，会自动取域名"
+      },
+      "site_exclude": {
+        "name": "site_exclude",
+        "tooltip": "排除指定站点，等价于 -site:a -site:b"
+      },
+      "exclude_words": {
+        "name": "exclude_words",
+        "tooltip": "排除包含这些词/短语的网页，等价于 -词；用逗号分隔，带空格的短语会自动加引号"
+      },
+      "exact_phrase": {
+        "name": "exact_phrase",
+        "tooltip": "精确匹配整句：把 query 用双引号包起来（适合找原文/报错信息）"
+      },
+      "exact_phrases": {
+        "name": "exact_phrases",
+        "tooltip": "精确匹配这些短语，可多个，等价于 \"短语1\" \"短语2\"（短语内可含空格）"
+      },
+      "lang": {
+        "name": "lang",
+        "tooltip": "限定语言，等价于 lang:zh,en；留空表示不限"
+      },
+      "after": {
+        "name": "after",
+        "tooltip": "只保留该日期之后发布的网页，等价于 after:2025-01-01"
+      },
+      "before": {
+        "name": "before",
+        "tooltip": "只保留该日期之前发布的网页，等价于 before:2026-06-01"
+      },
+      "api_key": {
+        "name": "api_key",
+        "tooltip": "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。注意：该值会随工作流保存，分享工作流前请先清空。"
+      },
+      "base_url": {
+        "name": "base_url",
+        "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
+      },
+      "count": {
+        "name": "count",
+        "tooltip": "返回条数（1-50）。按次计费、与条数无关，默认 5 条足够给模型读"
+      },
+      "need_content": {
+        "name": "need_content",
+        "tooltip": "是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "结构化 Markdown 摘要：标题 / 统计 / 每条 链接·来源·摘要"
+      },
+      "1": {
+        "tooltip": "原始 JSON（含 results 数组）"
+      },
+      "2": {
+        "tooltip": "实际发出的搜索词、结果条数与估算费用"
+      }
+    }
+  },
+  "DeepSeekAPI_Balance": {
+    "display_name": "DeepSeek 额度 API",
+    "description": "查询账户额度（GET /user/balance）。输出一行汇总文本 + 接口原始 JSON（含 is_available、balance_infos 等全部字段）。查询本身不消耗 token、不产生费用。",
+    "inputs": {
+      "api_key": {
+        "name": "api_key",
+        "tooltip": "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。注意：该值会随工作流保存，分享工作流前请先清空。"
+      },
+      "base_url": {
+        "name": "base_url",
+        "tooltip": "API 地址，默认 https://api.deepseek.com（填 /v1 结尾也行，节点会自动处理）"
+      },
+      "currency": {
+        "name": "currency",
+        "tooltip": "汇总文本里显示哪个币种；auto = 优先 CNY，没有则取第一个。JSON 输出始终是完整返回"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "一行汇总，例如：额度：可用 ｜ CNY 81.00（赠送 10.00 / 充值 71.00）"
+      },
+      "1": {
+        "tooltip": "接口原始 JSON，例如"
+      }
+    }
+  }
+}

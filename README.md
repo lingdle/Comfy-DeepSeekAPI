@@ -10,6 +10,8 @@ English | [中文](#中文)
 
 Requires a ComfyUI version with V3 nodes (comfy_api.latest).
 
+Node titles, descriptions and tooltips follow ComfyUI's interface language (English / 中文).
+
 ## Usage
 
 Three nodes under Add Node → DeepSeek:
@@ -51,6 +53,8 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 3. 重启 ComfyUI
 
 需要支持 V3 节点的 ComfyUI 版本（comfy_api.latest）。
+
+节点标题、描述与 tooltip 跟随 ComfyUI 的界面语言（中文 / English）。
 
 ### 使用
 
