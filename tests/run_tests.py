@@ -598,10 +598,10 @@ def test_search_schema_structure():
     assert order[:4] == ["question", "query", "after", "lang"]
 
     inputs = {item["id"]: item for item in schema.inputs if item["kind"] == "input"}
-    assert inputs["question"]["default"] == "DeepSeek 最新模型是什么？"
+    assert inputs["question"]["default"] == "What's the latest DeepSeek news today?"
     assert inputs["question"]["multiline"] is True
     assert inputs["query"]["multiline"] is True
-    assert inputs["query"]["default"] == "DeepSeek 最新模型"
+    assert inputs["query"]["default"] == "DeepSeek latest model"
     for field in ("site_include", "site_exclude", "exclude_words", "exact_phrases", "after", "before"):
         assert inputs[field]["default"] == ""
     assert inputs["lang"]["default"] == "zh,en"

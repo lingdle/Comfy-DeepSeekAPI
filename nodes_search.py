@@ -51,14 +51,14 @@ class DeepSeekSearchNode(io.ComfyNode):
             inputs=[
                 io.String.Input(
                     "question",
-                    default="DeepSeek 最新模型是什么？",
+                    default="What's the latest DeepSeek news today?",
                     multiline=True,
                     placeholder="如：DeepSeek 最新模型是什么？ / e.g. What are the newest DeepSeek models?",
                     tooltip="触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例",
                 ),
                 io.String.Input(
                     "query",
-                    default="DeepSeek 最新模型",
+                    default="DeepSeek latest model",
                     multiline=True,
                     placeholder="只写关键词即可，不用写 site:/lang: 语法 / keywords only, no site:/lang: syntax",
                     tooltip="搜索词（1-128 字符）。语法请用折叠区里的筛选控件，节点会自动拼接",

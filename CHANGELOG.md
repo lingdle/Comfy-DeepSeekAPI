@@ -1,6 +1,10 @@
 # 更新记录
 
-当前版本：**1.1.0**（2026-11-15）
+当前版本：**1.1.1**（2026-11-15）
+
+**1.1.1**（2026-11-15）
+
+- 搜索节点默认值改为英文：question = "What's the latest DeepSeek news today?"，query = "DeepSeek latest model"
 
 **1.1.0**（2026-11-15）
 
