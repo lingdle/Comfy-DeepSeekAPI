@@ -111,14 +111,14 @@ class DeepSeekModelNode(io.ComfyNode):
                     "system_prompt",
                     default="你是一个图像理解助手",
                     multiline=True,
-                    placeholder="系统提示词，默认：你是一个图像理解助手",
+                    placeholder="如：你是一个图像理解助手 / e.g. You are an image understanding assistant",
                     tooltip="系统提示词，决定模型的角色与规则；默认按图像理解场景写好\nSystem prompt that sets the role and rules; the default is tuned for image understanding",
                 ),
                 io.String.Input(
                     "user_prompt",
                     default="图片上是什么？",
                     multiline=True,
-                    placeholder="用户提示词，默认：图片上是什么？",
+                    placeholder="如：图片上是什么？ / e.g. What is in this image?",
                     tooltip="用户提示词；清空且不接图片会报错\nUser prompt; if cleared and no image is connected the node raises an error",
                 ),
                 io.Combo.Input(
