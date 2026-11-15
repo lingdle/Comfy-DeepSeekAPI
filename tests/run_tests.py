@@ -1123,6 +1123,23 @@ def test_example_workflow_matches_schema():
 
 
 
+@test
+def test_locale_inputs_follow_schema_order():
+    expected = {
+        "DeepSeekAPI_Model": NS.DeepSeekModelNode.define_schema().kwargs,
+        "DeepSeekAPI_Search": SEARCH.DeepSeekSearchNode.define_schema().kwargs,
+        "DeepSeekAPI_Balance": BAL.DeepSeekBalanceNode.define_schema().kwargs,
+    }
+    for lang in ("zh", "en"):
+        data = json.loads((PKG_DIR / "locales" / lang / "nodeDefs.json").read_text(encoding="utf-8"))
+        assert list(data) == list(expected), "%s: node order" % lang
+        for node_id, schema in expected.items():
+            ids = [item["id"] for item in schema["inputs"]]
+            keys = list(data[node_id].get("inputs", {}))
+            assert keys == ids, "%s/%s: %s != %s" % (lang, node_id, keys, ids)
+
+
+
 def main():
     failures = []
     for func in TESTS:

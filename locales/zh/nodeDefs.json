@@ -3,6 +3,18 @@
     "display_name": "DeepSeek 模型 API",
     "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。",
     "inputs": {
+      "images": {
+        "name": "images",
+        "tooltip": "可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃"
+      },
+      "user_prompt": {
+        "name": "user_prompt",
+        "tooltip": "用户提示词；清空且不接图片会报错"
+      },
+      "system_prompt": {
+        "name": "system_prompt",
+        "tooltip": "系统提示词，决定模型的角色与规则；默认按图像理解场景写好"
+      },
       "model": {
         "name": "model",
         "tooltip": "模型名称，例如 deepseek-flash（支持图片）或 deepseek-v4-pro（仅文本）"
@@ -15,21 +27,17 @@
         "name": "base_url",
         "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
       },
-      "images": {
-        "name": "images",
-        "tooltip": "可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃"
-      },
-      "system_prompt": {
-        "name": "system_prompt",
-        "tooltip": "系统提示词，决定模型的角色与规则；默认按图像理解场景写好"
-      },
-      "user_prompt": {
-        "name": "user_prompt",
-        "tooltip": "用户提示词；清空且不接图片会报错"
-      },
       "thinking": {
         "name": "thinking",
         "tooltip": "思考模式：close 关闭（最快最省）；low / high / max 开启思考，档位越高越慢越贵"
+      },
+      "web_search": {
+        "name": "web_search",
+        "tooltip": "联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭"
+      },
+      "read_url": {
+        "name": "read_url",
+        "tooltip": "联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭"
       },
       "temperature": {
         "name": "temperature",
@@ -50,14 +58,6 @@
       "max_images": {
         "name": "max_images",
         "tooltip": "最多发送几张图（images 是 batch 时按顺序取前 N 张）"
-      },
-      "web_search": {
-        "name": "web_search",
-        "tooltip": "联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭"
-      },
-      "read_url": {
-        "name": "read_url",
-        "tooltip": "联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭"
       }
     },
     "outputs": {
@@ -82,9 +82,37 @@
     "display_name": "DeepSeek 搜索 API",
     "description": "调用 DeepSeek 网页搜索接口（POST /v1/tools/search）。搜索语法不用手写：站点/排除/语言/日期都是独立控件，节点自动拼成 site:、-site:、lang:、after: 等。按次计费（约 ¥0.005/次），与返回条数无关。",
     "inputs": {
+      "question": {
+        "name": "question",
+        "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
+      },
       "query": {
         "name": "query",
         "tooltip": "搜索词（1-128 字符）。语法请用折叠区里的筛选控件，节点会自动拼接"
+      },
+      "after": {
+        "name": "after",
+        "tooltip": "只保留该日期之后发布的网页，等价于 after:2025-01-01"
+      },
+      "lang": {
+        "name": "lang",
+        "tooltip": "限定语言，等价于 lang:zh,en；留空表示不限"
+      },
+      "count": {
+        "name": "count",
+        "tooltip": "返回条数（1-50）。按次计费、与条数无关，默认 5 条足够给模型读"
+      },
+      "need_content": {
+        "name": "need_content",
+        "tooltip": "是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）"
+      },
+      "api_key": {
+        "name": "api_key",
+        "tooltip": "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。注意：该值会随工作流保存，分享工作流前请先清空。"
+      },
+      "base_url": {
+        "name": "base_url",
+        "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
       },
       "site_include": {
         "name": "site_include",
@@ -106,37 +134,9 @@
         "name": "exact_phrases",
         "tooltip": "精确匹配这些短语，可多个，等价于 \"短语1\" \"短语2\"（短语内可含空格）"
       },
-      "lang": {
-        "name": "lang",
-        "tooltip": "限定语言，等价于 lang:zh,en；留空表示不限"
-      },
-      "after": {
-        "name": "after",
-        "tooltip": "只保留该日期之后发布的网页，等价于 after:2025-01-01"
-      },
       "before": {
         "name": "before",
         "tooltip": "只保留该日期之前发布的网页，等价于 before:2026-06-01"
-      },
-      "api_key": {
-        "name": "api_key",
-        "tooltip": "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。注意：该值会随工作流保存，分享工作流前请先清空。"
-      },
-      "base_url": {
-        "name": "base_url",
-        "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
-      },
-      "count": {
-        "name": "count",
-        "tooltip": "返回条数（1-50）。按次计费、与条数无关，默认 5 条足够给模型读"
-      },
-      "need_content": {
-        "name": "need_content",
-        "tooltip": "是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）"
-      },
-      "question": {
-        "name": "question",
-        "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
       }
     },
     "outputs": {

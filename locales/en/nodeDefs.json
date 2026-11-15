@@ -3,6 +3,18 @@
     "display_name": "DeepSeek Model API",
     "description": "Call DeepSeek models (deepseek-flash by default): text chat, image understanding (up to max_images images) and optional web tools. Thinking is off (thinking=close) for lower cost and latency; switch to low / high / max for stronger reasoning.",
     "inputs": {
+      "images": {
+        "name": "images",
+        "tooltip": "Optional: one or more images. A batch is expanded in order; anything beyond max_images is dropped"
+      },
+      "user_prompt": {
+        "name": "user_prompt",
+        "tooltip": "User prompt; if cleared and no image is connected the node raises an error"
+      },
+      "system_prompt": {
+        "name": "system_prompt",
+        "tooltip": "System prompt that sets the role and rules; the default is tuned for image understanding"
+      },
       "model": {
         "name": "model",
         "tooltip": "Model name, e.g. deepseek-flash (images supported) or deepseek-v4-pro (text only)"
@@ -15,21 +27,17 @@
         "name": "base_url",
         "tooltip": "Base URL, default https://api.deepseek.com (a /v1 suffix also works)"
       },
-      "images": {
-        "name": "images",
-        "tooltip": "Optional: one or more images. A batch is expanded in order; anything beyond max_images is dropped"
-      },
-      "system_prompt": {
-        "name": "system_prompt",
-        "tooltip": "System prompt that sets the role and rules; the default is tuned for image understanding"
-      },
-      "user_prompt": {
-        "name": "user_prompt",
-        "tooltip": "User prompt; if cleared and no image is connected the node raises an error"
-      },
       "thinking": {
         "name": "thinking",
         "tooltip": "Thinking mode: close = off (fastest and cheapest); low / high / max enable thinking, higher is slower and pricier"
+      },
+      "web_search": {
+        "name": "web_search",
+        "tooltip": "Web tool: let the model search the web and cite results (deepseek_web_search). Billed per call, off by default"
+      },
+      "read_url": {
+        "name": "read_url",
+        "tooltip": "Web tool: let the model read links in your message (deepseek_read_url). Billed per call, off by default"
       },
       "temperature": {
         "name": "temperature",
@@ -50,14 +58,6 @@
       "max_images": {
         "name": "max_images",
         "tooltip": "Max images to send (a batch is taken in order, first N kept)"
-      },
-      "web_search": {
-        "name": "web_search",
-        "tooltip": "Web tool: let the model search the web and cite results (deepseek_web_search). Billed per call, off by default"
-      },
-      "read_url": {
-        "name": "read_url",
-        "tooltip": "Web tool: let the model read links in your message (deepseek_read_url). Billed per call, off by default"
       }
     },
     "outputs": {
@@ -82,9 +82,37 @@
     "display_name": "DeepSeek Search API",
     "description": "Search the web via POST /v1/tools/search. No syntax to write by hand: site / exclude / language / date are separate widgets and the node builds the query. Billed per call (about 0.005 CNY), independent of result count.",
     "inputs": {
+      "question": {
+        "name": "question",
+        "tooltip": "The original question behind this search (1-128 chars); helps the engine understand intent. The default is just an example"
+      },
       "query": {
         "name": "query",
         "tooltip": "Query keywords (1-128 chars). Use the filter widgets in the advanced section instead of writing syntax by hand"
+      },
+      "after": {
+        "name": "after",
+        "tooltip": "Keep pages published after this date, same as after:2025-01-01"
+      },
+      "lang": {
+        "name": "lang",
+        "tooltip": "Restrict language, same as lang:zh,en. Leave empty for any language"
+      },
+      "count": {
+        "name": "count",
+        "tooltip": "Number of results (1-50). Billed per call, count does not change the price; 5 is enough for an LLM"
+      },
+      "need_content": {
+        "name": "need_content",
+        "tooltip": "Return page content as well; off by default because it is large and costs tokens downstream"
+      },
+      "api_key": {
+        "name": "api_key",
+        "tooltip": "Paste sk-... directly, or env placeholder to read an environment variable. This value is saved in the workflow, so clear it before sharing."
+      },
+      "base_url": {
+        "name": "base_url",
+        "tooltip": "Base URL, default https://api.deepseek.com (a /v1 suffix also works)"
       },
       "site_include": {
         "name": "site_include",
@@ -106,37 +134,9 @@
         "name": "exact_phrases",
         "tooltip": "(match these exact phrases; comma separated; spaces allowed inside a phrase)"
       },
-      "lang": {
-        "name": "lang",
-        "tooltip": "Restrict language, same as lang:zh,en. Leave empty for any language"
-      },
-      "after": {
-        "name": "after",
-        "tooltip": "Keep pages published after this date, same as after:2025-01-01"
-      },
       "before": {
         "name": "before",
         "tooltip": "Keep pages published before this date, same as before:2026-06-01"
-      },
-      "api_key": {
-        "name": "api_key",
-        "tooltip": "Paste sk-... directly, or env placeholder to read an environment variable. This value is saved in the workflow, so clear it before sharing."
-      },
-      "base_url": {
-        "name": "base_url",
-        "tooltip": "Base URL, default https://api.deepseek.com (a /v1 suffix also works)"
-      },
-      "count": {
-        "name": "count",
-        "tooltip": "Number of results (1-50). Billed per call, count does not change the price; 5 is enough for an LLM"
-      },
-      "need_content": {
-        "name": "need_content",
-        "tooltip": "Return page content as well; off by default because it is large and costs tokens downstream"
-      },
-      "question": {
-        "name": "question",
-        "tooltip": "The original question behind this search (1-128 chars); helps the engine understand intent. The default is just an example"
       }
     },
     "outputs": {
