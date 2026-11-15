@@ -1,6 +1,13 @@
 # 更新记录
 
-当前版本：**1.1.3**（2026-11-15）
+当前版本：**1.2.0**（2026-11-15）
+
+**1.2.0**（2026-11-15）
+
+- 模型节点常用字段顺序：用户提示词 → 系统提示词 → model → thinking → web_search → read_url → api_key → base_url
+- images 移入折叠区（与 temperature / max_tokens / image_detail / image_max_side / max_images 一起）
+- 示例工作流同步重建（输入顺序、控件值、连线槽位）
+- **不兼容变更**：控件顺序再次调整，画布上的旧节点需删除重拖
 
 **1.1.3**（2026-11-15）
 

@@ -389,7 +389,16 @@ def test_schema_structure():
     assert inputs["images"]["type"] == "IMAGE"
 
     order = [item["id"] for item in schema.inputs]
-    assert order[:6] == ["images", "user_prompt", "system_prompt", "model", "api_key", "base_url"]
+    assert order[:8] == [
+        "user_prompt",
+        "system_prompt",
+        "model",
+        "thinking",
+        "web_search",
+        "read_url",
+        "api_key",
+        "base_url",
+    ]
 
     assert inputs["web_search"]["default"] is False
     assert inputs["read_url"]["default"] is False
@@ -1057,15 +1066,14 @@ def test_advanced_inputs_are_collapsed():
         return [item["id"] for item in schema["inputs"] if bool(item.get("advanced")) is advanced]
 
     assert ids(model, False) == [
-        "images",
         "user_prompt",
         "system_prompt",
         "model",
-        "api_key",
-        "base_url",
         "thinking",
         "web_search",
         "read_url",
+        "api_key",
+        "base_url",
     ]
     assert ids(search, False) == [
         "question",
@@ -1077,7 +1085,7 @@ def test_advanced_inputs_are_collapsed():
         "api_key",
         "base_url",
     ]
-    assert len(ids(model, True)) == 5
+    assert len(ids(model, True)) == 6
     assert len(ids(search, True)) == 6
 
 

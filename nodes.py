@@ -83,12 +83,6 @@ class DeepSeekModelNode(io.ComfyNode):
                 "图像理解",
             ],
             inputs=[
-                io.Image.Input(
-                    "images",
-                    display_name="images",
-                    optional=True,
-                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃",
-                ),
                 io.String.Input(
                     "user_prompt",
                     default="图片上是什么？",
@@ -108,19 +102,6 @@ class DeepSeekModelNode(io.ComfyNode):
                     default=DEFAULT_MODEL,
                     tooltip="模型名称，例如 deepseek-flash（支持图片）或 deepseek-v4-pro（仅文本）",
                 ),
-                io.String.Input(
-                    "api_key",
-                    default=DEFAULT_API_KEY_PLACEHOLDER,
-                    tooltip=(
-                        "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
-                        "注意：该值会随工作流保存，分享工作流前请先清空。"
-                    ),
-                ),
-                io.String.Input(
-                    "base_url",
-                    default=DEFAULT_BASE_URL,
-                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
-                ),
                 io.Combo.Input(
                     "thinking",
                     options=["close", "low", "high", "max"],
@@ -136,6 +117,26 @@ class DeepSeekModelNode(io.ComfyNode):
                     "read_url",
                     default=False,
                     tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭",
+                ),
+                io.String.Input(
+                    "api_key",
+                    default=DEFAULT_API_KEY_PLACEHOLDER,
+                    tooltip=(
+                        "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
+                        "注意：该值会随工作流保存，分享工作流前请先清空。"
+                    ),
+                ),
+                io.String.Input(
+                    "base_url",
+                    default=DEFAULT_BASE_URL,
+                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
+                ),
+                io.Image.Input(
+                    "images",
+                    display_name="images",
+                    optional=True,
+                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃",
+                    advanced=True,
                 ),
                 io.Float.Input(
                     "temperature",
