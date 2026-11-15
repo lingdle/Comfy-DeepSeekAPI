@@ -1,7 +1,7 @@
 {
   "DeepSeekAPI_Model": {
     "display_name": "DeepSeek Model API",
-    "description": "Call DeepSeek models (deepseek-flash by default): text chat, image understanding (up to max_images images) and optional web tools. Thinking is off by default for lower cost and latency.",
+    "description": "Call DeepSeek models (deepseek-flash by default): text chat, image understanding (up to max_images images) and optional web tools. Thinking is off (thinking=close) for lower cost and latency; switch to low / high / max for stronger reasoning.",
     "inputs": {
       "model": {
         "name": "model",
@@ -29,11 +29,7 @@
       },
       "thinking": {
         "name": "thinking",
-        "tooltip": "Thinking mode: disabled is fastest and cheapest; enabled is better but slower and pricier"
-      },
-      "reasoning_effort": {
-        "name": "reasoning_effort",
-        "tooltip": "Only used when thinking=enabled; low is the cheapest"
+        "tooltip": "Thinking mode: close = off (fastest and cheapest); low / high / max enable thinking, higher is slower and pricier"
       },
       "temperature": {
         "name": "temperature",
@@ -69,7 +65,7 @@
         "tooltip": "The model's final answer"
       },
       "1": {
-        "tooltip": "Chain of thought (empty when thinking=disabled)"
+        "tooltip": "Chain of thought (empty when thinking=close)"
       },
       "2": {
         "tooltip": "Token usage and estimated cost"
@@ -86,13 +82,9 @@
     "display_name": "DeepSeek Search API",
     "description": "Search the web via POST /v1/tools/search. No syntax to write by hand: site / exclude / language / date are separate widgets and the node builds the query. Billed per call (about 0.005 CNY), independent of result count.",
     "inputs": {
-      "ori_question": {
-        "name": "ori_question",
-        "tooltip": "The original question behind this search (1-128 chars); helps the engine understand intent. The default is just an example"
-      },
       "query": {
         "name": "query",
-        "tooltip": "Query keywords (1-128 chars). Use the filter fields below instead of writing syntax by hand"
+        "tooltip": "Query keywords (1-128 chars). Use the filter widgets in the advanced section instead of writing syntax by hand"
       },
       "site_include": {
         "name": "site_include",
@@ -141,6 +133,10 @@
       "need_content": {
         "name": "need_content",
         "tooltip": "Return page content as well; off by default because it is large and costs tokens downstream"
+      },
+      "question": {
+        "name": "ori_question",
+        "tooltip": "The original question behind this search (1-128 chars); helps the engine understand intent. The default is just an example"
       }
     },
     "outputs": {

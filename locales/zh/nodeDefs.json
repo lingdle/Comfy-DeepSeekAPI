@@ -1,7 +1,7 @@
 {
   "DeepSeekAPI_Model": {
     "display_name": "DeepSeek 模型 API",
-    "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。默认关闭思考模式，省钱且快；需要更强的推理时把 thinking 改成 enabled。",
+    "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。",
     "inputs": {
       "model": {
         "name": "model",
@@ -29,11 +29,7 @@
       },
       "thinking": {
         "name": "thinking",
-        "tooltip": "思考模式：disabled 最快最省；enabled 质量更高但更慢更贵"
-      },
-      "reasoning_effort": {
-        "name": "reasoning_effort",
-        "tooltip": "仅在 thinking=enabled 时生效；low 最省钱"
+        "tooltip": "思考模式：close 关闭（最快最省）；low / high / max 开启思考，档位越高越慢越贵"
       },
       "temperature": {
         "name": "temperature",
@@ -69,7 +65,7 @@
         "tooltip": "模型的最终回答"
       },
       "1": {
-        "tooltip": "思考模式的思维链（thinking=disabled 时为空）"
+        "tooltip": "思考模式的思维链（thinking=close 时为空）"
       },
       "2": {
         "tooltip": "token 用量与估算费用"
@@ -86,13 +82,9 @@
     "display_name": "DeepSeek 搜索 API",
     "description": "调用 DeepSeek 网页搜索接口（POST /v1/tools/search）。搜索语法不用手写：站点/排除/语言/日期都是独立控件，节点自动拼成 site:、-site:、lang:、after: 等。按次计费（约 ¥0.005/次），与返回条数无关。",
     "inputs": {
-      "ori_question": {
-        "name": "ori_question",
-        "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
-      },
       "query": {
         "name": "query",
-        "tooltip": "搜索词（1-128 字符）。语法请用下面的筛选控件，节点会自动拼接"
+        "tooltip": "搜索词（1-128 字符）。语法请用折叠区里的筛选控件，节点会自动拼接"
       },
       "site_include": {
         "name": "site_include",
@@ -141,6 +133,10 @@
       "need_content": {
         "name": "need_content",
         "tooltip": "是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）"
+      },
+      "question": {
+        "name": "ori_question",
+        "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
       }
     },
     "outputs": {

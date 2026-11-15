@@ -50,21 +50,63 @@ class DeepSeekSearchNode(io.ComfyNode):
             ],
             inputs=[
                 io.String.Input(
-                    "ori_question",
+                    "question",
                     default="DeepSeek 最新模型是什么？",
+                    multiline=True,
+                    placeholder="如：DeepSeek 最新模型是什么？ / e.g. What are the newest DeepSeek models?",
                     tooltip="触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例",
                 ),
                 io.String.Input(
                     "query",
                     default="DeepSeek 最新模型",
+                    multiline=True,
                     placeholder="只写关键词即可，不用写 site:/lang: 语法 / keywords only, no site:/lang: syntax",
-                    tooltip="搜索词（1-128 字符）。语法请用下面的筛选控件，节点会自动拼接",
+                    tooltip="搜索词（1-128 字符）。语法请用折叠区里的筛选控件，节点会自动拼接",
+                ),
+                io.String.Input(
+                    "after",
+                    default="",
+                    placeholder="如 2025 或 2025-01-01 / e.g. 2025 or 2025-01-01",
+                    tooltip="只保留该日期之后发布的网页，等价于 after:2025-01-01",
+                ),
+                io.String.Input(
+                    "lang",
+                    default="zh,en",
+                    placeholder="如 zh 或 zh,en / e.g. zh or zh,en",
+                    tooltip="限定语言，等价于 lang:zh,en；留空表示不限",
+                ),
+                io.Int.Input(
+                    "count",
+                    default=5,
+                    min=1,
+                    max=50,
+                    step=1,
+                    tooltip="返回条数（1-50）。按次计费、与条数无关，默认 5 条足够给模型读",
+                ),
+                io.Boolean.Input(
+                    "need_content",
+                    default=False,
+                    tooltip="是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）",
+                ),
+                io.String.Input(
+                    "api_key",
+                    default=DEFAULT_API_KEY_PLACEHOLDER,
+                    tooltip=(
+                        "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
+                        "注意：该值会随工作流保存，分享工作流前请先清空。"
+                    ),
+                ),
+                io.String.Input(
+                    "base_url",
+                    default=DEFAULT_BASE_URL,
+                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
                 ),
                 io.String.Input(
                     "site_include",
                     default="",
                     placeholder="如 github.com, huggingface.co（逗号或空格分隔）/ e.g. github.com, huggingface.co",
                     tooltip="只在指定站点搜索，等价于 site:a OR site:b；直接粘网址也行，会自动取域名",
+                    advanced=True,
                 ),
                 io.String.Input(
                     "site_exclude",
@@ -90,21 +132,7 @@ class DeepSeekSearchNode(io.ComfyNode):
                     "exact_phrases",
                     default="",
                     placeholder="额外精确短语，逗号分隔 / extra exact phrases, comma separated",
-                    tooltip="精确匹配这些短语，可多个，等价于 \"短语1\" \"短语2\"（短语内可含空格）",
-                    advanced=True,
-                ),
-                io.String.Input(
-                    "lang",
-                    default="zh,en",
-                    placeholder="如 zh 或 zh,en / e.g. zh or zh,en",
-                    tooltip="限定语言，等价于 lang:zh,en；留空表示不限",
-                    advanced=True,
-                ),
-                io.String.Input(
-                    "after",
-                    default="",
-                    placeholder="如 2025 或 2025-01-01 / e.g. 2025 or 2025-01-01",
-                    tooltip="只保留该日期之后发布的网页，等价于 after:2025-01-01",
+                    tooltip="精确匹配这些短语，可多个，等价于「短语1」「短语2」（短语内可含空格）",
                     advanced=True,
                 ),
                 io.String.Input(
@@ -112,35 +140,6 @@ class DeepSeekSearchNode(io.ComfyNode):
                     default="",
                     placeholder="如 2026-06-01 / e.g. 2026-06-01",
                     tooltip="只保留该日期之前发布的网页，等价于 before:2026-06-01",
-                    advanced=True,
-                ),
-                io.String.Input(
-                    "api_key",
-                    default=DEFAULT_API_KEY_PLACEHOLDER,
-                    tooltip=(
-                        "填 sk-... 直接使用；或填 ${环境变量名} 从环境变量读取（默认 ${DEEPSEEK_API_KEY}）。"
-                        "注意：该值会随工作流保存，分享工作流前请先清空。"
-                    ),
-                ),
-                io.String.Input(
-                    "base_url",
-                    default=DEFAULT_BASE_URL,
-                    tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
-                    advanced=True,
-                ),
-                io.Int.Input(
-                    "count",
-                    default=5,
-                    min=1,
-                    max=50,
-                    step=1,
-                    tooltip="返回条数（1-50）。按次计费、与条数无关，默认 5 条足够给模型读",
-                    advanced=True,
-                ),
-                io.Boolean.Input(
-                    "need_content",
-                    default=False,
-                    tooltip="是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）",
                     advanced=True,
                 ),
             ],
@@ -160,26 +159,26 @@ class DeepSeekSearchNode(io.ComfyNode):
     @classmethod
     def execute(
         cls,
-        query,
-        api_key,
-        base_url,
+        question="",
+        query="",
+        after="",
+        lang="",
+        count=5,
+        need_content=False,
+        api_key=DEFAULT_API_KEY_PLACEHOLDER,
+        base_url=DEFAULT_BASE_URL,
         site_include="",
         site_exclude="",
         exclude_words="",
         exact_phrase=False,
         exact_phrases="",
-        lang="",
-        after="",
         before="",
-        count=5,
-        need_content=False,
-        ori_question="",
     ):
-        question = (ori_question or "").strip() or None
-        if question and len(question) > MAX_QUESTION_LEN:
+        question_text = (question or "").strip() or None
+        if question_text and len(question_text) > MAX_QUESTION_LEN:
             raise DeepSeekAPIError(
-                "ori_question 过长（%d 字符），上限 %d 字符"
-                % (len(question), MAX_QUESTION_LEN)
+                "question 过长（%d 字符），上限 %d 字符"
+                % (len(question_text), MAX_QUESTION_LEN)
             )
 
         query_text = build_query(
@@ -202,7 +201,7 @@ class DeepSeekSearchNode(io.ComfyNode):
             query_text,
             count=count,
             need_content=bool(need_content),
-            ori_question=question,
+            ori_question=question_text,
         )
 
         results = data.get("results") or []

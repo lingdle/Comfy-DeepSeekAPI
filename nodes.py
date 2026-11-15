@@ -68,7 +68,7 @@ class DeepSeekModelNode(io.ComfyNode):
             description=(
                 "调用 DeepSeek 云端模型（默认 deepseek-flash）。"
                 "支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。"
-                "默认关闭思考模式，省钱且快；需要更强的推理时把 thinking 改成 enabled。"
+                "默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。"
             ),
             search_aliases=[
                 "deepseek",
@@ -83,6 +83,26 @@ class DeepSeekModelNode(io.ComfyNode):
                 "图像理解",
             ],
             inputs=[
+                io.Image.Input(
+                    "images",
+                    display_name="images",
+                    optional=True,
+                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃",
+                ),
+                io.String.Input(
+                    "user_prompt",
+                    default="图片上是什么？",
+                    multiline=True,
+                    placeholder="如：图片上是什么？ / e.g. What is in this image?",
+                    tooltip="用户提示词；清空且不接图片会报错",
+                ),
+                io.String.Input(
+                    "system_prompt",
+                    default="你是一个图像理解助手",
+                    multiline=True,
+                    placeholder="如：你是一个图像理解助手 / e.g. You are an image understanding assistant",
+                    tooltip="系统提示词，决定模型的角色与规则；默认按图像理解场景写好",
+                ),
                 io.String.Input(
                     "model",
                     default=DEFAULT_MODEL,
@@ -100,40 +120,22 @@ class DeepSeekModelNode(io.ComfyNode):
                     "base_url",
                     default=DEFAULT_BASE_URL,
                     tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
-                    advanced=True,
-                ),
-                io.Image.Input(
-                    "images",
-                    display_name="images",
-                    optional=True,
-                    tooltip="可选：一张或多张图片（IMAGE）。接 batch 时按顺序展开，超过 max_images 的部分丢弃",
-                ),
-                io.String.Input(
-                    "system_prompt",
-                    default="你是一个图像理解助手",
-                    multiline=True,
-                    placeholder="如：你是一个图像理解助手 / e.g. You are an image understanding assistant",
-                    tooltip="系统提示词，决定模型的角色与规则；默认按图像理解场景写好",
-                ),
-                io.String.Input(
-                    "user_prompt",
-                    default="图片上是什么？",
-                    multiline=True,
-                    placeholder="如：图片上是什么？ / e.g. What is in this image?",
-                    tooltip="用户提示词；清空且不接图片会报错",
                 ),
                 io.Combo.Input(
                     "thinking",
-                    options=["disabled", "enabled"],
-                    default="disabled",
-                    tooltip="思考模式：disabled 最快最省；enabled 质量更高但更慢更贵",
+                    options=["close", "low", "high", "max"],
+                    default="close",
+                    tooltip="思考模式：close 关闭（最快最省）；low / high / max 开启思考，档位越高越慢越贵",
                 ),
-                io.Combo.Input(
-                    "reasoning_effort",
-                    options=["low", "high", "max"],
-                    default="low",
-                    tooltip="仅在 thinking=enabled 时生效；low 最省钱",
-                    advanced=True,
+                io.Boolean.Input(
+                    "web_search",
+                    default=False,
+                    tooltip="联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭",
+                ),
+                io.Boolean.Input(
+                    "read_url",
+                    default=False,
+                    tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭",
                 ),
                 io.Float.Input(
                     "temperature",
@@ -141,7 +143,7 @@ class DeepSeekModelNode(io.ComfyNode):
                     min=0.0,
                     max=2.0,
                     step=0.1,
-                    tooltip="仅在 thinking=disabled 时生效；提示词扩写建议 1.0-1.3",
+                    tooltip="仅在 thinking=close 时生效；提示词扩写建议 1.0-1.3",
                     advanced=True,
                 ),
                 io.Int.Input(
@@ -178,22 +180,10 @@ class DeepSeekModelNode(io.ComfyNode):
                     tooltip="最多发送几张图（images 是 batch 时按顺序取前 N 张）",
                     advanced=True,
                 ),
-                io.Boolean.Input(
-                    "web_search",
-                    default=False,
-                    tooltip="联网工具：让模型自己搜索网页并附引用（deepseek_web_search）。按次计费，默认关闭",
-                    advanced=True,
-                ),
-                io.Boolean.Input(
-                    "read_url",
-                    default=False,
-                    tooltip="联网工具：让模型阅读用户消息里的链接（deepseek_read_url）。按次计费，默认关闭",
-                    advanced=True,
-                ),
             ],
             outputs=[
                 io.String.Output(display_name="text", tooltip="模型的最终回答"),
-                io.String.Output(display_name="reasoning", tooltip="思考模式的思维链（thinking=disabled 时为空）"),
+                io.String.Output(display_name="reasoning", tooltip="思考模式的思维链（thinking=close 时为空）"),
                 io.String.Output(display_name="usage", tooltip="token 用量与估算费用"),
                 io.String.Output(
                     display_name="sources",
@@ -209,21 +199,20 @@ class DeepSeekModelNode(io.ComfyNode):
     @classmethod
     def execute(
         cls,
-        model,
-        api_key,
-        base_url,
-        system_prompt,
-        user_prompt,
         images=None,
-        thinking="disabled",
-        reasoning_effort="low",
+        user_prompt="",
+        system_prompt="",
+        model=DEFAULT_MODEL,
+        api_key=DEFAULT_API_KEY_PLACEHOLDER,
+        base_url=DEFAULT_BASE_URL,
+        thinking="close",
+        web_search=False,
+        read_url=False,
         temperature=1.0,
         max_tokens=1024,
         image_detail="low",
         image_max_side=1024,
         max_images=5,
-        web_search=False,
-        read_url=False,
     ) -> io.NodeOutput:
         model_name = (model or "").strip() or DEFAULT_MODEL
         key = resolve_api_key(api_key)
@@ -261,7 +250,10 @@ class DeepSeekModelNode(io.ComfyNode):
         else:
             messages.append({"role": "user", "content": user_text})
 
-        thinking_on = str(thinking).strip().lower() == "enabled"
+        level = str(thinking or "close").strip().lower()
+        if level not in ("close", "low", "high", "max"):
+            level = "close"
+        thinking_on = level != "close"
         payload = {
             "model": model_name,
             "messages": messages,
@@ -270,7 +262,7 @@ class DeepSeekModelNode(io.ComfyNode):
             "thinking": {"type": "enabled" if thinking_on else "disabled"},
         }
         if thinking_on:
-            payload["reasoning_effort"] = reasoning_effort or "low"
+            payload["reasoning_effort"] = level
         else:
             payload["temperature"] = float(temperature)
 

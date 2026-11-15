@@ -1,6 +1,14 @@
 # 更新记录
 
-当前版本：**1.0.11**（2026-11-15）
+当前版本：**1.1.0**（2026-11-15）
+
+**1.1.0**（2026-11-15）
+
+- 模型节点：thinking 与 reasoning_effort 合并为单一「思考模式」下拉（close / low / high / max），默认 close
+- 模型节点：常用字段顺序改为 图片 → 用户提示词 → 系统提示词 → model → api_key → base_url → thinking → web_search → read_url，其余折叠
+- 搜索节点：ori_question 更名为 question，question 与 query 都改为多行文本框
+- 搜索节点：常用字段顺序改为 question → query → after → lang → count → need_content → api_key → base_url，筛选控件折叠
+- **不兼容变更**：模型/搜索节点的控件顺序与数量变化，旧工作流需重新拖节点或按新顺序核对参数
 
 **1.0.11**（2026-11-15）
 

@@ -378,8 +378,8 @@ def test_schema_structure():
     assert inputs["user_prompt"]["multiline"] is True
     assert inputs["system_prompt"]["default"] == "你是一个图像理解助手"
     assert inputs["user_prompt"]["default"] == "图片上是什么？"
-    assert inputs["thinking"]["default"] == "disabled"
-    assert inputs["reasoning_effort"]["default"] == "low"
+    assert inputs["thinking"]["default"] == "close"
+    assert inputs["thinking"]["options"] == ["close", "low", "high", "max"]
     assert inputs["max_tokens"]["default"] == 1024
     assert inputs["image_detail"]["default"] == "low"
     assert inputs["image_max_side"]["default"] == 1024
@@ -389,7 +389,7 @@ def test_schema_structure():
     assert inputs["images"]["type"] == "IMAGE"
 
     order = [item["id"] for item in schema.inputs]
-    assert order[:6] == ["model", "api_key", "base_url", "images", "system_prompt", "user_prompt"]
+    assert order[:6] == ["images", "user_prompt", "system_prompt", "model", "api_key", "base_url"]
 
     assert inputs["web_search"]["default"] is False
     assert inputs["read_url"]["default"] is False
@@ -472,8 +472,7 @@ def test_execute_thinking_payload():
             base_url="https://api.deepseek.com",
             system_prompt="",
             user_prompt="q",
-            thinking="enabled",
-            reasoning_effort="low",
+            thinking="high",
             temperature=0.5,
         )
     finally:
@@ -481,7 +480,7 @@ def test_execute_thinking_payload():
 
     payload = fake.payload
     assert payload["thinking"] == {"type": "enabled"}
-    assert payload["reasoning_effort"] == "low"
+    assert payload["reasoning_effort"] == "high"
     assert "temperature" not in payload
     assert len(payload["messages"]) == 1
     assert result.results[1] == "because"
@@ -596,10 +595,12 @@ def test_search_schema_structure():
     assert schema.category == "DeepSeek"
 
     order = [item["id"] for item in schema.inputs]
-    assert order[:3] == ["ori_question", "query", "site_include"]
+    assert order[:4] == ["question", "query", "after", "lang"]
 
     inputs = {item["id"]: item for item in schema.inputs if item["kind"] == "input"}
-    assert inputs["ori_question"]["default"] == "DeepSeek 最新模型是什么？"
+    assert inputs["question"]["default"] == "DeepSeek 最新模型是什么？"
+    assert inputs["question"]["multiline"] is True
+    assert inputs["query"]["multiline"] is True
     assert inputs["query"]["default"] == "DeepSeek 最新模型"
     for field in ("site_include", "site_exclude", "exclude_words", "exact_phrases", "after", "before"):
         assert inputs[field]["default"] == ""
@@ -692,7 +693,7 @@ def test_search_execute_payload():
             base_url="https://api.deepseek.com",
             count=3,
             need_content=True,
-            ori_question="  原始问题 ",
+            question="  原始问题 ",
         )
     finally:
         SEARCH.DeepSeekClient = original
@@ -1056,16 +1057,28 @@ def test_advanced_inputs_are_collapsed():
         return [item["id"] for item in schema["inputs"] if bool(item.get("advanced")) is advanced]
 
     assert ids(model, False) == [
+        "images",
+        "user_prompt",
+        "system_prompt",
         "model",
         "api_key",
-        "images",
-        "system_prompt",
-        "user_prompt",
+        "base_url",
         "thinking",
+        "web_search",
+        "read_url",
     ]
-    assert ids(search, False) == ["ori_question", "query", "site_include", "api_key"]
-    assert len(ids(model, True)) == 9
-    assert len(ids(search, True)) == 10
+    assert ids(search, False) == [
+        "question",
+        "query",
+        "after",
+        "lang",
+        "count",
+        "need_content",
+        "api_key",
+        "base_url",
+    ]
+    assert len(ids(model, True)) == 5
+    assert len(ids(search, True)) == 6
 
 
 
