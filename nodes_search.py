@@ -51,12 +51,12 @@ class DeepSeekSearchNode(io.ComfyNode):
             inputs=[
                 io.String.Input(
                     "ori_question",
-                    default="DeepSeek 最新模型是什么？有哪些新特性？",
+                    default="DeepSeek 最新模型是什么？",
                     tooltip="触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例",
                 ),
                 io.String.Input(
                     "query",
-                    default="DeepSeek V4 模型 发布",
+                    default="DeepSeek 最新模型",
                     placeholder="只写关键词即可，不用写 site:/lang: 语法 / keywords only, no site:/lang: syntax",
                     tooltip="搜索词（1-128 字符）。语法请用下面的筛选控件，节点会自动拼接",
                 ),
@@ -95,7 +95,7 @@ class DeepSeekSearchNode(io.ComfyNode):
                 ),
                 io.String.Input(
                     "lang",
-                    default="",
+                    default="zh,en",
                     placeholder="如 zh 或 zh,en / e.g. zh or zh,en",
                     tooltip="限定语言，等价于 lang:zh,en；留空表示不限",
                     advanced=True,

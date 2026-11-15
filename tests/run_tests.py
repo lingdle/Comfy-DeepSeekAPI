@@ -599,10 +599,11 @@ def test_search_schema_structure():
     assert order[:3] == ["ori_question", "query", "site_include"]
 
     inputs = {item["id"]: item for item in schema.inputs if item["kind"] == "input"}
-    assert inputs["ori_question"]["default"] == "DeepSeek 最新模型是什么？有哪些新特性？"
-    assert inputs["query"]["default"] == "DeepSeek V4 模型 发布"
-    for field in ("site_include", "site_exclude", "exclude_words", "exact_phrases", "lang", "after", "before"):
+    assert inputs["ori_question"]["default"] == "DeepSeek 最新模型是什么？"
+    assert inputs["query"]["default"] == "DeepSeek 最新模型"
+    for field in ("site_include", "site_exclude", "exclude_words", "exact_phrases", "after", "before"):
         assert inputs[field]["default"] == ""
+    assert inputs["lang"]["default"] == "zh,en"
     assert inputs["exact_phrase"]["default"] is False
     assert inputs["api_key"]["default"] == PLACEHOLDER
     assert inputs["base_url"]["default"] == "https://api.deepseek.com"
