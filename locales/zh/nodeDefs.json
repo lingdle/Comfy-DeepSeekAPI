@@ -135,7 +135,7 @@
         "tooltip": "是否返回网页正文，默认关（正文体积大，接模型时注意 token 成本）"
       },
       "question": {
-        "name": "ori_question",
+        "name": "question",
         "tooltip": "触发这次搜索的原始问题（1-128 字符），帮助搜索理解意图；默认给了一个示例"
       }
     },

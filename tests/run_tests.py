@@ -172,12 +172,12 @@ class FakeClient:
             raise self.error
         return self.response if self.response is not None else {"is_available": True, "balance_infos": []}
 
-    def search(self, query, count=5, need_content=False, ori_question=None):
+    def search(self, query, count=5, need_content=False, question=None):
         self.search_args = {
             "query": query,
             "count": count,
             "need_content": need_content,
-            "ori_question": ori_question,
+            "question": question,
         }
         if self.error is not None:
             raise self.error
@@ -702,7 +702,7 @@ def test_search_execute_payload():
         "query": "DeepSeek",
         "count": 3,
         "need_content": True,
-        "ori_question": "原始问题",
+        "question": "原始问题",
     }
     assert "## 1. A" in result.results[0]
     assert json.loads(result.results[1])["results"][0]["title"] == "A"
@@ -1079,6 +1079,47 @@ def test_advanced_inputs_are_collapsed():
     ]
     assert len(ids(model, True)) == 5
     assert len(ids(search, True)) == 6
+
+
+
+@test
+def test_locale_slot_names_match_ids():
+    for lang in ("zh", "en"):
+        path = PKG_DIR / "locales" / lang / "nodeDefs.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for node_id, entry in data.items():
+            for key, value in entry.get("inputs", {}).items():
+                assert value.get("name") == key, "%s/%s: name=%r key=%r" % (
+                    lang,
+                    node_id,
+                    value.get("name"),
+                    key,
+                )
+
+
+@test
+def test_example_workflow_matches_schema():
+    path = PKG_DIR / "example_workflows" / "Comfy-DeepSeek-API.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    expected = {
+        "DeepSeekAPI_Model": NS.DeepSeekModelNode.define_schema().kwargs,
+        "DeepSeekAPI_Search": SEARCH.DeepSeekSearchNode.define_schema().kwargs,
+        "DeepSeekAPI_Balance": BAL.DeepSeekBalanceNode.define_schema().kwargs,
+    }
+    checked = 0
+    for node in data["nodes"]:
+        schema = expected.get(node["type"])
+        if schema is None:
+            continue
+        checked += 1
+        ids = [item["id"] for item in schema["inputs"]]
+        assert [item["name"] for item in node["inputs"]] == ids, node["type"]
+        widget_count = sum(1 for item in schema["inputs"] if item.get("type") != "IMAGE")
+        assert len(node["widgets_values"]) == widget_count, "%s widgets" % node["type"]
+        assert set(node["widgets_values_named"]) == {
+            item["id"] for item in schema["inputs"] if item.get("type") != "IMAGE"
+        }, node["type"]
+    assert checked == 3
 
 
 

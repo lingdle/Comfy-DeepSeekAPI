@@ -1,6 +1,13 @@
 # 更新记录
 
-当前版本：**1.1.1**（2026-11-15）
+当前版本：**1.1.2**（2026-11-15）
+
+**1.1.2**（2026-11-15）
+
+- 修复：locales 里 question 的 name 仍写着 ori_question，导致面板控件标签显示旧名
+- 修复：示例工作流的 inputs 数组仍按旧 schema（含 ori_question / reasoning_effort），已按新顺序重建
+- 内部 client.search 形参由 ori_question 改为 question（HTTP 字段仍是接口约定的 ori_question）
+- 新增 2 项回归测试：locale 的 name 必须与输入 id 一致、示例工作流必须与 schema 对齐（共 43 项）
 
 **1.1.1**（2026-11-15）
 

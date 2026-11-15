@@ -135,7 +135,7 @@
         "tooltip": "Return page content as well; off by default because it is large and costs tokens downstream"
       },
       "question": {
-        "name": "ori_question",
+        "name": "question",
         "tooltip": "The original question behind this search (1-128 chars); helps the engine understand intent. The default is just an example"
       }
     },

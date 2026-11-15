@@ -201,7 +201,7 @@ class DeepSeekSearchNode(io.ComfyNode):
             query_text,
             count=count,
             need_content=bool(need_content),
-            ori_question=question_text,
+            question=question_text,
         )
 
         results = data.get("results") or []

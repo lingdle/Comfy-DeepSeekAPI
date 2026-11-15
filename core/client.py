@@ -50,15 +50,16 @@ class DeepSeekClient:
         """POST {base_url}/chat/completions。"""
         return self._request("POST", self._url("/chat/completions"), payload, "chat")
 
-    def search(self, query, count=5, need_content=False, ori_question=None):
+    def search(self, query, count=5, need_content=False, question=None):
         """POST {base_url}/v1/tools/search（网页搜索，按次计费）。"""
         body = {
             "query": query,
             "count": int(count),
             "need_content": bool(need_content),
         }
-        if ori_question:
-            body["ori_question"] = ori_question
+        if question:
+            # DeepSeek 接口字段名固定为 ori_question，这里只是把节点侧的 question 映射过去
+            body["ori_question"] = question
         return self._request("POST", self._url("/tools/search", versioned=True), body, "search")
 
     def balance(self):
