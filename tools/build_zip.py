@@ -11,7 +11,7 @@ from pathlib import Path
 
 from schema_utils import package_version, repo_root
 
-EXCLUDE_DIRS = {"__pycache__", ".git", "tests", "tools", "docs", "dist", ".github", ".vscode"}
+EXCLUDE_DIRS = {"__pycache__", ".git", ".ruff_cache", "tests", "tools", "docs", "dist", ".github", ".vscode"}
 EXCLUDE_SUFFIX = {".pyc", ".pyo", ".zip"}
 EXCLUDE_FILES = {"AGENTS.md"}
 

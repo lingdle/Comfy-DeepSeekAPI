@@ -1,6 +1,6 @@
 [project]
 name = "Comfy-DeepSeekAPI"
-version = "1.2.3"
+version = "1.2.4"
 description = "ComfyUI nodes for DeepSeek API: chat (text + images + web tools), web search, and account balance"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
