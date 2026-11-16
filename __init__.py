@@ -19,7 +19,7 @@ from .nodes import DeepSeekModelNode
 from .nodes_balance import DeepSeekBalanceNode
 from .nodes_search import DeepSeekSearchNode
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 
 class DeepSeekExtension(ComfyExtension):
