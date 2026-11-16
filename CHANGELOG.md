@@ -1,6 +1,12 @@
 # 更新记录
 
-当前版本：**1.2.6**（2026-11-17）
+当前版本：**1.2.7**（2026-11-17）
+
+**1.2.7**（2026-11-17）
+
+- 目录调整：example_workflows/ 合并为 example/workflows/，新增 example/cases/（案例），文件名全 ASCII
+- 新增案例：FL2VA 导演 Agent 系统提示词（example/cases/fl2va-director-agent.md + fl2va-director-system-prompt.txt），配模型节点「两张首尾帧 + 长系统提示词」用法
+- audit / validate_example / tests / README / docs 路径同步
 
 **1.2.6**（2026-11-17）
 

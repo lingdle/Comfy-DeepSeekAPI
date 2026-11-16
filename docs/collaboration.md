@@ -12,7 +12,8 @@
 | nodes.py / nodes_search.py / nodes_balance.py | 三个节点的 V3 schema 与 execute |
 | core/ | HTTP 客户端、配置解析、错误映射、定价、图像编码、搜索语法拼装 |
 | locales/zh, locales/en | nodeDefs.json：节点标题、描述、输入 tooltip 的本地化 |
-| example_workflows/ | 示例工作流（json）+ 同名缩略图（jpg） |
+| example/workflows/ | 示例工作流（json）+ 同名缩略图（jpg） |
+| example/cases/ | 案例：配合节点使用的提示词与说明（ASCII 文件名） |
 | assets/ | 图标、横幅、赞助码 |
 | tests/run_tests.py | 单元测试（桩件模拟 ComfyUI，不联网） |
 | tools/ | 开发工具：审计、示例校验、打包、API 兜底推送 |
@@ -55,7 +56,7 @@
 
 1. 节点源码：nodes*.py（字段定义、默认值、tooltip、advanced 标记）
 2. locales/zh/nodeDefs.json 与 locales/en/nodeDefs.json（键名、name、tooltip、顺序）
-3. example_workflows/*.json（inputs 顺序、widgets_values、widgets_values_named；**换位置还要重算 links 的目标槽位**）
+3. example/workflows/*.json（inputs 顺序、widgets_values、widgets_values_named；**换位置还要重算 links 的目标槽位**）
 4. tests/run_tests.py（顺序、默认值、折叠集合、载荷断言）
 5. README.md（只有入口或步骤变化时才改）
 6. 版本与 CHANGELOG

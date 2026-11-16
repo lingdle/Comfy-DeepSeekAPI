@@ -1219,7 +1219,7 @@ def test_locale_slot_names_match_ids():
 
 @test
 def test_example_workflow_matches_schema():
-    path = PKG_DIR / "example_workflows" / "Comfy-DeepSeek-API.json"
+    path = PKG_DIR / "example" / "workflows" / "Comfy-DeepSeek-API.json"
     data = json.loads(path.read_text(encoding="utf-8"))
     expected = {
         "DeepSeekAPI_Model": NS.DeepSeekModelNode.define_schema().kwargs,

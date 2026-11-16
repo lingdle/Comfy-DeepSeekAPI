@@ -68,10 +68,10 @@ def check_locales(root, schemas, issues):
 
 
 def check_example(root, schemas, issues):
-    path = root / "example_workflows"
+    path = root / "example" / "workflows"
     files = sorted(path.glob("*.json")) if path.exists() else []
     if not files:
-        issues.append("example_workflows 下没有工作流")
+        issues.append("example/workflows 下没有工作流")
         return
     for file in files:
         data = json.loads(file.read_text(encoding="utf-8"))

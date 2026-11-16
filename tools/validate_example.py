@@ -80,7 +80,7 @@ def check_file(path, schemas):
 def main():
     root = repo_root()
     schemas = parse_schemas(root)
-    files = sorted((root / "example_workflows").glob("*.json"))
+    files = sorted((root / "example" / "workflows").glob("*.json"))
     failed = False
     for path in files:
         issues = check_file(path, schemas)

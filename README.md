@@ -30,11 +30,15 @@ Both image inputs can be used at once: click + on 多图插槽 (image_slots) to 
 
 ## Example
 
-![Comfy-DeepSeek-API workflow](example_workflows/Comfy-DeepSeek-API.jpg)
+![Comfy-DeepSeek-API workflow](example/workflows/Comfy-DeepSeek-API.jpg)
 
-Workflow file: [example_workflows/Comfy-DeepSeek-API.json](example_workflows/Comfy-DeepSeek-API.json)
+Workflow file: [example/workflows/Comfy-DeepSeek-API.json](example/workflows/Comfy-DeepSeek-API.json)
 
 Open it from Workflow → Browse Templates, or drag the JSON file onto the canvas.
+
+## Cases
+
+- [FL2VA director agent](example/cases/fl2va-director-agent.md): a long Chinese system prompt for turning two frames (first / last) into a MiniMax H3 FL2VA shot list. Wire both frames into the model node, paste the system prompt, and ask for the description — the node is set up for long output by default. Raw prompt: [fl2va-director-system-prompt.txt](example/cases/fl2va-director-system-prompt.txt)
 
 ## Sponsor
 
@@ -78,11 +82,15 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 
 ### 示例
 
-![Comfy-DeepSeek-API 工作流](example_workflows/Comfy-DeepSeek-API.jpg)
+![Comfy-DeepSeek-API 工作流](example/workflows/Comfy-DeepSeek-API.jpg)
 
-工作流文件：[example_workflows/Comfy-DeepSeek-API.json](example_workflows/Comfy-DeepSeek-API.json)
+工作流文件：[example/workflows/Comfy-DeepSeek-API.json](example/workflows/Comfy-DeepSeek-API.json)
 
 可从 Workflow → Browse Templates 打开，或直接把 JSON 拖进画布。
+
+### 案例
+
+- [FL2VA 导演 Agent](example/cases/fl2va-director-agent.md)：把首/尾两帧 + 一段文本意图变成 MiniMax H3 FL2VA 分镜的中文系统提示词。模型节点接两张图、把系统提示词粘进去即可；默认已按长输出配置。原始提示词：[fl2va-director-system-prompt.txt](example/cases/fl2va-director-system-prompt.txt)
 
 ### 支持这个项目
 
