@@ -15,11 +15,22 @@ except Exception as exc:  # pragma: no cover - 老版本 ComfyUI 才会走到
         "请升级 ComfyUI 到最新版后重启。原始错误：%s" % exc
     ) from exc
 
+try:
+    from comfy_api.latest import io as _comfy_io
+except Exception:  # pragma: no cover - 极老版本 comfy_api 没有 io 子模块
+    _comfy_io = None
+
+if _comfy_io is None or not hasattr(_comfy_io, "Autogrow"):  # pragma: no cover
+    raise RuntimeError(
+        "Comfy-DeepSeekAPI 需要 ComfyUI v0.4.0 及以上（io.Autogrow 动态输入）。"
+        "请升级 ComfyUI 后重启。"
+    )
+
 from .nodes import DeepSeekModelNode
 from .nodes_balance import DeepSeekBalanceNode
 from .nodes_search import DeepSeekSearchNode
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 
 
 class DeepSeekExtension(ComfyExtension):

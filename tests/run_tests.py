@@ -34,6 +34,24 @@ class _Type:
         return record
 
 
+class _AutogrowTemplatePrefix:
+    def __init__(self, input=None, prefix="", min=0, max=10):
+        self.input = input
+        self.prefix = prefix
+        self.min = min
+        self.max = max
+
+
+class _Autogrow:
+    TemplatePrefix = _AutogrowTemplatePrefix
+
+    @staticmethod
+    def Input(id, template=None, **kwargs):
+        record = {"kind": "input", "type": "COMFY_AUTOGROW_V3", "id": id, "template": template}
+        record.update(kwargs)
+        return record
+
+
 class Schema:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -73,6 +91,7 @@ def _install_stub():
         Combo=_Type("COMBO"),
         Image=_Type("IMAGE"),
         Mask=_Type("MASK"),
+        Autogrow=_Autogrow,
     )
     latest = types.ModuleType("comfy_api.latest")
     latest.io = io
@@ -388,8 +407,15 @@ def test_schema_structure():
     assert inputs["images"]["optional"] is True
     assert inputs["images"]["type"] == "IMAGE"
 
+    slots = inputs["image_slots"]
+    assert slots["type"] == "COMFY_AUTOGROW_V3"
+    assert slots["optional"] is True
+    assert slots["template"].prefix == "image_"
+    assert slots["template"].min == 0
+    assert slots["template"].max == 10
+
     order = [item["id"] for item in schema.inputs]
-    assert order[:8] == [
+    assert order[:9] == [
         "user_prompt",
         "system_prompt",
         "model",
@@ -398,6 +424,7 @@ def test_schema_structure():
         "read_url",
         "api_key",
         "base_url",
+        "image_slots",
     ]
 
     assert inputs["web_search"]["default"] is False
@@ -533,6 +560,88 @@ def test_execute_with_images(monkeypatch=None):
     assert content[1]["image_url"]["url"].startswith("data:image/jpeg;base64,")
     assert calls["max_images"] == 3
     assert result.results[0] == "a cat"
+
+
+@test
+def test_merge_image_inputs_order_and_skips_empty():
+    assert NS._merge_image_inputs(None, None) == []
+    assert NS._merge_image_inputs({}, "batch") == ["batch"]
+    assert NS._merge_image_inputs({"image_2": None, "image_10": "c", "image_0": "a"}, "batch") == [
+        "a",
+        "c",
+        "batch",
+    ]
+
+
+@test
+def test_execute_merges_autogrow_slots_before_images():
+    seen = []
+
+    def fake_encode(tensor, max_images=5, max_side=1024, quality=85):
+        seen.append(tensor)
+        return ["data:image/jpeg;base64," + str(tensor)]
+
+    original_encode = NS.tensor_to_data_urls
+    original_client = NS.DeepSeekClient
+    fake = FakeClient(response={
+        "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+        "usage": {},
+    })
+    NS.tensor_to_data_urls = fake_encode
+    NS.DeepSeekClient = fake
+    try:
+        NS.DeepSeekModelNode.execute(
+            model="deepseek-flash",
+            api_key="sk-test",
+            base_url="https://api.deepseek.com",
+            user_prompt="描述",
+            image_slots={"image_1": "B", "image_0": "A", "image_10": "C"},
+            images="batch",
+            max_images=4,
+        )
+    finally:
+        NS.tensor_to_data_urls = original_encode
+        NS.DeepSeekClient = original_client
+
+    assert seen == ["A", "B", "C", "batch"]
+    content = fake.payload["messages"][-1]["content"]
+    urls = [block["image_url"]["url"] for block in content if block["type"] == "image_url"]
+    assert len(urls) == 4
+
+
+@test
+def test_execute_autogrow_slots_take_priority_over_images():
+    seen = []
+
+    def fake_encode(tensor, max_images=5, max_side=1024, quality=85):
+        seen.append((tensor, max_images))
+        return ["data:image/jpeg;base64,AAA"]
+
+    original_encode = NS.tensor_to_data_urls
+    original_client = NS.DeepSeekClient
+    fake = FakeClient(response={
+        "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+        "usage": {},
+    })
+    NS.tensor_to_data_urls = fake_encode
+    NS.DeepSeekClient = fake
+    try:
+        NS.DeepSeekModelNode.execute(
+            model="deepseek-flash",
+            api_key="sk-test",
+            base_url="https://api.deepseek.com",
+            user_prompt="描述",
+            image_slots={"image_0": "A", "image_1": "B"},
+            images="batch",
+            max_images=2,
+        )
+    finally:
+        NS.tensor_to_data_urls = original_encode
+        NS.DeepSeekClient = original_client
+
+    assert seen == [("A", 2), ("B", 1)]
+    content = fake.payload["messages"][-1]["content"]
+    assert len([b for b in content if b["type"] == "image_url"]) == 2
 
 
 @test
@@ -1074,6 +1183,7 @@ def test_advanced_inputs_are_collapsed():
         "read_url",
         "api_key",
         "base_url",
+        "image_slots",
     ]
     assert ids(search, False) == [
         "question",
@@ -1122,10 +1232,13 @@ def test_example_workflow_matches_schema():
         checked += 1
         ids = [item["id"] for item in schema["inputs"]]
         assert [item["name"] for item in node["inputs"]] == ids, node["type"]
-        widget_count = sum(1 for item in schema["inputs"] if item.get("type") != "IMAGE")
+        socket_types = ("IMAGE", "COMFY_AUTOGROW_V3")
+        widget_count = sum(
+            1 for item in schema["inputs"] if item.get("type") not in socket_types
+        )
         assert len(node["widgets_values"]) == widget_count, "%s widgets" % node["type"]
         assert set(node["widgets_values_named"]) == {
-            item["id"] for item in schema["inputs"] if item.get("type") != "IMAGE"
+            item["id"] for item in schema["inputs"] if item.get("type") not in socket_types
         }, node["type"]
     assert checked == 3
 

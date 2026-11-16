@@ -1,7 +1,7 @@
 {
   "DeepSeekAPI_Model": {
     "display_name": "DeepSeek 模型 API",
-    "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。",
+    "description": "调用 DeepSeek 云端模型（默认 deepseek-flash）。支持纯文本对话，也支持图片识别（image_slots 可动态加插槽，images 可接单张或 batch，合并后最多 max_images 张）。默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。",
     "inputs": {
       "user_prompt": {
         "name": "user_prompt",
@@ -34,6 +34,10 @@
       "base_url": {
         "name": "base_url",
         "tooltip": "API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）"
+      },
+      "image_slots": {
+        "name": "image_slots",
+        "tooltip": "可选：点 + 动态添加图片插槽，每个插槽接一张或一整个 batch；插槽里的图排在 images 前面，合并后最多发送 max_images 张"
       },
       "images": {
         "name": "images",

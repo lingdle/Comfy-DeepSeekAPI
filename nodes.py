@@ -6,6 +6,7 @@
 
 import json
 import logging
+import re
 
 from comfy_api.latest import io
 
@@ -52,6 +53,28 @@ def _collect_sources(annotations, steps, limit=10):
     return "\n".join(lines)
 
 
+_SLOT_INDEX = re.compile(r"(\d+)$")
+
+
+def _slot_sort_key(name):
+    """autogrow 插槽名 image_0、image_10 按数字顺序排，未知名字排最后。"""
+    match = _SLOT_INDEX.search(str(name))
+    return (0, int(match.group(1)), str(name)) if match else (1, 0, str(name))
+
+
+def _merge_image_inputs(image_slots, images):
+    """合并两路图片输入：autogrow 插槽在前，images（单张或 batch）在后。"""
+    merged = []
+    if isinstance(image_slots, dict):
+        for name in sorted(image_slots, key=_slot_sort_key):
+            tensor = image_slots.get(name)
+            if tensor is not None:
+                merged.append(tensor)
+    if images is not None:
+        merged.append(images)
+    return merged
+
+
 DEFAULT_VISION_PROMPT = "请详细描述这些图片的内容；如果图中有文字，请一并转写出来。"
 NODE_ID = "DeepSeekAPI_Model"
 
@@ -67,7 +90,8 @@ class DeepSeekModelNode(io.ComfyNode):
             category="DeepSeekAPI",
             description=(
                 "调用 DeepSeek 云端模型（默认 deepseek-flash）。"
-                "支持纯文本对话，也支持图片识别（images 可接一张或多张，最多 max_images 张）。"
+                "支持纯文本对话，也支持图片识别（image_slots 可动态加插槽，images 可接单张或 batch，"
+                "两路合并后最多 max_images 张，插槽里的图排在前面）。"
                 "默认关闭思考（thinking=close），省钱且快；需要更强推理时把 thinking 改成 low / high / max。"
             ),
             search_aliases=[
@@ -130,6 +154,21 @@ class DeepSeekModelNode(io.ComfyNode):
                     "base_url",
                     default=DEFAULT_BASE_URL,
                     tooltip="API 地址，默认 https://api.deepseek.com（也可填 https://api.deepseek.com/v1）",
+                ),
+                io.Autogrow.Input(
+                    "image_slots",
+                    display_name="多图插槽",
+                    template=io.Autogrow.TemplatePrefix(
+                        input=io.Image.Input("image"),
+                        prefix="image_",
+                        min=0,
+                        max=10,
+                    ),
+                    optional=True,
+                    tooltip=(
+                        "可选：点 + 动态添加图片插槽，每个插槽接一张或一整个 batch。"
+                        "插槽里的图排在 images 前面，合并后最多发送 max_images 张"
+                    ),
                 ),
                 io.Image.Input(
                     "images",
@@ -201,6 +240,7 @@ class DeepSeekModelNode(io.ComfyNode):
     def execute(
         cls,
         images=None,
+        image_slots=None,
         user_prompt="",
         system_prompt="",
         model=DEFAULT_MODEL,
@@ -224,10 +264,15 @@ class DeepSeekModelNode(io.ComfyNode):
 
         limit = max(1, int(max_images))
         data_urls = []
-        if images is not None:
-            data_urls = tensor_to_data_urls(
-                images, max_images=limit, max_side=image_max_side
-            )[:limit]
+        for tensor in _merge_image_inputs(image_slots, images):
+            if len(data_urls) >= limit:
+                break
+            data_urls.extend(
+                tensor_to_data_urls(
+                    tensor, max_images=limit - len(data_urls), max_side=image_max_side
+                )
+            )
+        data_urls = data_urls[:limit]
 
         if data_urls and model_name.lower() in ("deepseek-v4-pro", "deepseek-pro"):
             raise DeepSeekAPIError(

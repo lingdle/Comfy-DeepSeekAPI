@@ -1,7 +1,7 @@
 {
   "DeepSeekAPI_Model": {
     "display_name": "DeepSeek Model API",
-    "description": "Call DeepSeek models (deepseek-flash by default): text chat, image understanding (up to max_images images) and optional web tools. Thinking is off (thinking=close) for lower cost and latency; switch to low / high / max for stronger reasoning.",
+    "description": "Call DeepSeek models (deepseek-flash by default): text chat, image understanding (autogrow image_slots plus an images batch, merged and capped at max_images) and optional web tools. Thinking is off (thinking=close) for lower cost and latency; switch to low / high / max for stronger reasoning.",
     "inputs": {
       "user_prompt": {
         "name": "user_prompt",
@@ -34,6 +34,10 @@
       "base_url": {
         "name": "base_url",
         "tooltip": "Base URL, default https://api.deepseek.com (a /v1 suffix also works)"
+      },
+      "image_slots": {
+        "name": "image_slots",
+        "tooltip": "Optional: click + to add image slots (one image or a whole batch per slot). Slot images are sent before images; the merged list is capped at max_images"
       },
       "images": {
         "name": "images",

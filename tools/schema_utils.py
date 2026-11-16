@@ -17,6 +17,8 @@ TYPE_MAP = {
     "Boolean": "BOOLEAN",
     "Combo": "COMBO",
     "Image": "IMAGE",
+    # autogrow 组在 schema 里是一个插槽集合，不算控件，按 socket 处理
+    "Autogrow": "IMAGE",
 }
 
 
