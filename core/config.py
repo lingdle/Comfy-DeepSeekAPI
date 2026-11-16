@@ -1,7 +1,7 @@
 """配置解析：api_key 支持字面量与环境变量占位符，base_url 归一化。"""
 
-import os
 import re
+from os import environ
 
 from .errors import ConfigError
 
@@ -37,7 +37,7 @@ def resolve_api_key(raw):
         matched = pattern.match(value)
         if matched:
             name = matched.group(1)
-            env_value = (os.environ.get(name) or "").strip()
+            env_value = (environ.get(name) or "").strip()
             if not env_value:
                 raise ConfigError(
                     "环境变量 %s 未设置：请在启动 ComfyUI 前设置它，"
@@ -46,7 +46,7 @@ def resolve_api_key(raw):
             return env_value
 
     if _ENV_NAME.match(value) and value.isupper():
-        env_value = (os.environ.get(value) or "").strip()
+        env_value = (environ.get(value) or "").strip()
         if not env_value:
             raise ConfigError(
                 "看起来你填的是环境变量名 %s，但系统里没有这个变量；"

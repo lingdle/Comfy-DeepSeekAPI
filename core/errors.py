@@ -67,6 +67,6 @@ def build_http_error(status, body_text, attempts=0):
     if status == 401:
         message += "。可填 sk-... 或 ${DEEPSEEK_API_KEY}（从环境变量读取）；创建 key：https://platform.deepseek.com/api_keys"
     if status == 413:
-        message += "。请调小 image_max_side 或减少图片数量"
+        message += "。图片太大：请减少图片数量或换更小的图（单图 ≤32 MiB，请求体 ≤48 MiB）"
     return DeepSeekAPIError(message, status=status, retryable=status in RETRYABLE_STATUS, detail=detail)
 

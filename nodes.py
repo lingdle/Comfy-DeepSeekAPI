@@ -1,7 +1,8 @@
 """DeepSeek 模型 API 节点（V3 schema）。
 
 一个节点覆盖：文本对话、图像识别（最多 5 张）、思考模式开关、成本估算。
-默认值全部按"最省钱、最快"设置：思考关闭、max_tokens 1024、图片低精度缩到 1024。
+默认值：思考关闭（最省钱）；max_tokens 取接口上限 384K（输出长描述不被截断）；
+图片不主动缩放，只有长边超过 4096 才缩（服务端本来就会把大图缩到约 1300×1300）。
 """
 
 import json
@@ -24,6 +25,12 @@ from .core.pricing import SEARCH_PRICE_PER_CALL, estimate_cost, format_usage
 LOG = logging.getLogger("DeepSeekAPI")
 
 DEFAULT_MODEL = "deepseek-flash"
+
+# 接口规格（platform.deepseek.com）：上下文 1M，max_tokens 1~384K，单次最多 600 张图
+MAX_OUTPUT_TOKENS = 393216
+MAX_IMAGES_PER_REQUEST = 600
+SEND_IMAGES_BY_DEFAULT = 5  # 费用护栏：默认只发 5 张，不是接口限制
+MAX_IMAGE_SIDE = 4096  # 内部兜底：只有超过才缩，避免请求体过大
 
 
 def _collect_sources(annotations, steps, limit=10):
@@ -188,11 +195,14 @@ class DeepSeekModelNode(io.ComfyNode):
                 ),
                 io.Int.Input(
                     "max_tokens",
-                    default=1024,
+                    default=MAX_OUTPUT_TOKENS,
                     min=16,
-                    max=32768,
-                    step=64,
-                    tooltip="单次输出上限；越大越慢越贵。只有输出不足时才需要调大",
+                    max=MAX_OUTPUT_TOKENS,
+                    step=1024,
+                    tooltip=(
+                        "单次输出上限，默认取接口上限 384K（1~393216）；"
+                        "只有生成到上限才会多花钱，调小反而可能把长描述截断"
+                    ),
                     advanced=True,
                 ),
                 io.Combo.Input(
@@ -203,21 +213,15 @@ class DeepSeekModelNode(io.ComfyNode):
                     advanced=True,
                 ),
                 io.Int.Input(
-                    "image_max_side",
-                    default=1024,
-                    min=256,
-                    max=2048,
-                    step=64,
-                    tooltip="上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分",
-                    advanced=True,
-                ),
-                io.Int.Input(
                     "max_images",
-                    default=5,
+                    default=SEND_IMAGES_BY_DEFAULT,
                     min=1,
-                    max=10,
+                    max=MAX_IMAGES_PER_REQUEST,
                     step=1,
-                    tooltip="最多发送几张图（images 是 batch 时按顺序取前 N 张）",
+                    tooltip=(
+                        "本次实际发送几张图（images 是 batch 时按顺序取前 N 张）。"
+                        "接口最多 600 张，这里默认 5 张只是控制费用与耗时"
+                    ),
                     advanced=True,
                 ),
             ],
@@ -250,10 +254,9 @@ class DeepSeekModelNode(io.ComfyNode):
         web_search=False,
         read_url=False,
         temperature=1.0,
-        max_tokens=1024,
+        max_tokens=MAX_OUTPUT_TOKENS,
         image_detail="low",
-        image_max_side=1024,
-        max_images=5,
+        max_images=SEND_IMAGES_BY_DEFAULT,
     ) -> io.NodeOutput:
         model_name = (model or "").strip() or DEFAULT_MODEL
         key = resolve_api_key(api_key)
@@ -269,7 +272,7 @@ class DeepSeekModelNode(io.ComfyNode):
                 break
             data_urls.extend(
                 tensor_to_data_urls(
-                    tensor, max_images=limit - len(data_urls), max_side=image_max_side
+                    tensor, max_images=limit - len(data_urls), max_side=MAX_IMAGE_SIDE
                 )
             )
         data_urls = data_urls[:limit]

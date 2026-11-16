@@ -26,11 +26,11 @@ def count_batch(tensor):
     return int(shape[0])
 
 
-def tensor_to_data_urls(tensor, max_images=5, max_side=1024, quality=85):
+def tensor_to_data_urls(tensor, max_images=5, max_side=4096, quality=85):
     """把 IMAGE([B,H,W,C], 0..1) 转成若干 JPEG data URL。
 
     - max_images: 最多取几张（batch 超出部分丢弃）
-    - max_side:   长边上限，默认 1024（单图 token 上限 1024，再大不加分）
+    - max_side:   长边上限，默认 4096；小于它的图原样发送，不做放大/缩小
     - quality:    JPEG 质量，默认 85（体积与画质平衡）
     """
     try:

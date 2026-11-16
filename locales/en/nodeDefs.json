@@ -49,19 +49,15 @@
       },
       "max_tokens": {
         "name": "max_tokens",
-        "tooltip": "Max output tokens; larger is slower and pricier. Increase only when output is truncated"
+        "tooltip": "Max output tokens, defaults to the API ceiling 384K (1-393216). You only pay for what is generated; lowering it can truncate long descriptions"
       },
       "image_detail": {
         "name": "image_detail",
         "tooltip": "Image detail: low downscales to 512x512, cheapest in tokens"
       },
-      "image_max_side": {
-        "name": "image_max_side",
-        "tooltip": "Downscale the long side to this value before upload; one image caps at 1024 tokens"
-      },
       "max_images": {
         "name": "max_images",
-        "tooltip": "Max images to send (a batch is taken in order, first N kept)"
+        "tooltip": "How many images to send (a batch is taken in order, first N kept). The API allows up to 600; the default of 5 just caps cost"
       }
     },
     "outputs": {

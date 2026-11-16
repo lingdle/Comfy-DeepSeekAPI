@@ -399,10 +399,12 @@ def test_schema_structure():
     assert inputs["user_prompt"]["default"] == "图片上是什么？"
     assert inputs["thinking"]["default"] == "close"
     assert inputs["thinking"]["options"] == ["close", "low", "high", "max"]
-    assert inputs["max_tokens"]["default"] == 1024
+    assert inputs["max_tokens"]["default"] == NS.MAX_OUTPUT_TOKENS == 393216
+    assert inputs["max_tokens"]["max"] == 393216
     assert inputs["image_detail"]["default"] == "low"
-    assert inputs["image_max_side"]["default"] == 1024
+    assert "image_max_side" not in inputs
     assert inputs["max_images"]["default"] == 5
+    assert inputs["max_images"]["max"] == NS.MAX_IMAGES_PER_REQUEST == 600
 
     assert inputs["images"]["optional"] is True
     assert inputs["images"]["type"] == "IMAGE"
@@ -479,7 +481,7 @@ def test_execute_text_payload():
     assert payload["thinking"] == {"type": "disabled"}
     assert payload["temperature"] == 1.0
     assert "reasoning_effort" not in payload
-    assert payload["max_tokens"] == 1024
+    assert payload["max_tokens"] == NS.MAX_OUTPUT_TOKENS
     assert payload["messages"][0] == {"role": "system", "content": "be nice"}
     assert payload["messages"][1] == {"role": "user", "content": "hi"}
 
@@ -1195,7 +1197,7 @@ def test_advanced_inputs_are_collapsed():
         "api_key",
         "base_url",
     ]
-    assert len(ids(model, True)) == 6
+    assert len(ids(model, True)) == 5
     assert len(ids(search, True)) == 6
 
 

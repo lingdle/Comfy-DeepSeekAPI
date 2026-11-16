@@ -49,19 +49,15 @@
       },
       "max_tokens": {
         "name": "max_tokens",
-        "tooltip": "单次输出上限；越大越慢越贵。只有输出不足时才需要调大"
+        "tooltip": "单次输出上限，默认取接口上限 384K（1~393216）；只有生成到上限才会多花钱，调小反而可能截断长描述"
       },
       "image_detail": {
         "name": "image_detail",
         "tooltip": "图片精度：low 会把图缩到 512x512，最省 token"
       },
-      "image_max_side": {
-        "name": "image_max_side",
-        "tooltip": "上传前把图片长边缩到该值；单图 token 上限为 1024，再大不加分"
-      },
       "max_images": {
         "name": "max_images",
-        "tooltip": "最多发送几张图（images 是 batch 时按顺序取前 N 张）"
+        "tooltip": "本次实际发送几张图（images 是 batch 时按顺序取前 N 张）；接口最多 600 张，默认 5 张只是控制费用"
       }
     },
     "outputs": {
