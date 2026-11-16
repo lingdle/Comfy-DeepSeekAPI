@@ -39,6 +39,7 @@ Open it from Workflow → Browse Templates, or drag the JSON file onto the canva
 ## Cases
 
 - [FL2VA director agent](example/cases/fl2va-director-agent.md): a long Chinese system prompt for turning two frames (first / last) into a MiniMax H3 FL2VA shot list. Wire both frames into the model node, paste the system prompt, and ask for the description — the node is set up for long output by default. Raw prompt: [fl2va-director-system-prompt.txt](example/cases/fl2va-director-system-prompt.txt)
+- [IndexTTS director prompt](example/cases/indextts-director-prompt.md): a Chinese system prompt that rewrites an idea into a dubbing script with IndexTTS segment tags. Paste it as the model node's system_prompt and feed the result to a TTS node.
 
 ## Sponsor
 
@@ -91,6 +92,7 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 ### 案例
 
 - [FL2VA 导演 Agent](example/cases/fl2va-director-agent.md)：把首/尾两帧 + 一段文本意图变成 MiniMax H3 FL2VA 分镜的中文系统提示词。模型节点接两张图、把系统提示词粘进去即可；默认已按长输出配置。原始提示词：[fl2va-director-system-prompt.txt](example/cases/fl2va-director-system-prompt.txt)
+- [IndexTTS 导演提示词](example/cases/indextts-director-prompt.md)：把意图/梗概改写成带段标语法的配音剧本；模型节点里当 system_prompt 用，输出直接喂 TTS 节点。
 
 ### 支持这个项目
 
