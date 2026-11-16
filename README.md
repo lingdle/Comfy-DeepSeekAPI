@@ -8,6 +8,8 @@ English | [中文](#中文)
 2. Set the environment variable DEEPSEEK_API_KEY (create one at https://platform.deepseek.com/api_keys)
 3. Restart ComfyUI
 
+![Adding DEEPSEEK_API_KEY in the instance's environment variables](assets/setup-env.png)
+
 Requires a ComfyUI version with V3 nodes (comfy_api.latest).
 
 Node titles, descriptions and tooltips follow ComfyUI's interface language (English / 中文).
@@ -51,6 +53,8 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 1. 把 Comfy-DeepSeekAPI 文件夹放进 ComfyUI/custom_nodes/
 2. 设置环境变量 DEEPSEEK_API_KEY（在 https://platform.deepseek.com/api_keys 创建）
 3. 重启 ComfyUI
+
+![在实例的环境变量中添加 DEEPSEEK_API_KEY](assets/setup-env.png)
 
 需要支持 V3 节点的 ComfyUI 版本（comfy_api.latest）。
 
