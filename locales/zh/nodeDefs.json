@@ -201,5 +201,38 @@
         "tooltip": "随包附带的专家级 SVG 生成提示词（example/cases/svg-generator-agent.md），可直接接到模型节点的 system_prompt"
       }
     }
+  },
+  "ImageCompositorHelper": {
+    "display_name": "图层合成助手",
+    "description": "把若干张带透明的图按数组顺序叠成一张合成图：节点上点「打开合成器」，在画布里拖位置、改大小、旋转、调层级与不透明度，锁定保存后执行即得结果。4 通道输入把第 4 通道当 alpha，3 通道按不透明处理；输出 3 通道 IMAGE + MASK + 布局 JSON。",
+    "inputs": {
+      "images": {
+        "name": "images",
+        "tooltip": "按 image_0 → image_7 的顺序从底到顶叠放；可有空位。4 通道当 alpha，3 通道按不透明"
+      },
+      "canvas_width": {
+        "name": "canvas_width",
+        "tooltip": "画布宽度；0 = 用存档里的画布，再没有就用第一张图的尺寸"
+      },
+      "canvas_height": {
+        "name": "canvas_height",
+        "tooltip": "画布高度；0 = 用存档里的画布，再没有就用第一张图的尺寸"
+      },
+      "layout_json": {
+        "name": "layout_json",
+        "tooltip": "布局存档 JSON（每层的 x / y / z / w / h / 旋转 / 不透明度）；解析失败会回退默认布局"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "合成结果，3 通道（透明度在 mask 里）"
+      },
+      "1": {
+        "tooltip": "整幅画布的合成 alpha"
+      },
+      "2": {
+        "tooltip": "本次实际使用的布局 JSON（每层 x / y / z / w / h 等）"
+      }
+    }
   }
 }

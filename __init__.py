@@ -29,20 +29,30 @@ if _comfy_io is None or not hasattr(_comfy_io, "Autogrow"):  # pragma: no cover
 from .nodes import DeepSeekModelNode
 from .nodes_balance import DeepSeekBalanceNode
 from .nodes_search import DeepSeekSearchNode
+from .nodes_compositor import ImageCompositorHelperNode
 from .nodes_svg import DeepSeekText2SVGNode
 
-__version__ = "1.2.10"
+__version__ = "1.3.0"
 
 
 class DeepSeekExtension(ComfyExtension):
     async def get_node_list(self):
-        return [DeepSeekModelNode, DeepSeekSearchNode, DeepSeekBalanceNode, DeepSeekText2SVGNode]
+        return [
+            DeepSeekModelNode,
+            DeepSeekSearchNode,
+            DeepSeekBalanceNode,
+            DeepSeekText2SVGNode,
+            ImageCompositorHelperNode,
+        ]
 
 
 async def comfy_entrypoint() -> DeepSeekExtension:
     """ComfyUI 通过这个入口加载扩展（V3 schema）。"""
     return DeepSeekExtension()
 
+
+# 前端资源（图层合成器的编辑器）：ComfyUI 会把 ./web 挂到 /extensions/<包名>/
+WEB_DIRECTORY = "./web"
 
 __all__ = ["comfy_entrypoint"]
 

@@ -8,7 +8,13 @@ import ast
 import re
 from pathlib import Path
 
-NODE_FILES = ("nodes.py", "nodes_search.py", "nodes_balance.py", "nodes_svg.py")
+NODE_FILES = (
+    "nodes.py",
+    "nodes_search.py",
+    "nodes_balance.py",
+    "nodes_svg.py",
+    "nodes_compositor.py",
+)
 
 TYPE_MAP = {
     "String": "STRING",
@@ -19,6 +25,7 @@ TYPE_MAP = {
     "Image": "IMAGE",
     # autogrow 组在 schema 里是一个插槽集合，不算控件，按 socket 处理
     "Autogrow": "IMAGE",
+    "Mask": "MASK",
 }
 
 

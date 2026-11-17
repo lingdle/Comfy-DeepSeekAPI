@@ -100,6 +100,7 @@ def _install_stub():
         Image=_Type("IMAGE"),
         Mask=_Type("MASK"),
         SVG=_SVGType("SVG"),
+        MASK=_Type("MASK"),
         Autogrow=_Autogrow,
     )
     latest = types.ModuleType("comfy_api.latest")
@@ -134,6 +135,8 @@ NS = PKG.nodes
 SEARCH = sys.modules["dsapi.nodes_search"]
 BAL = sys.modules["dsapi.nodes_balance"]
 SVGN = sys.modules["dsapi.nodes_svg"]
+COMP = sys.modules["dsapi.nodes_compositor"]
+CPCORE = sys.modules["dsapi.core.compositor"]
 SVGUTIL = sys.modules["dsapi.core.svg"]
 WEB = sys.modules["dsapi.core.websearch"]
 SQ = sys.modules["dsapi.core.searchquery"]
@@ -466,6 +469,7 @@ def test_entrypoint_returns_nodes():
         SEARCH.DeepSeekSearchNode,
         BAL.DeepSeekBalanceNode,
         SVGN.DeepSeekText2SVGNode,
+        COMP.ImageCompositorHelperNode,
     ]
 
 
@@ -1221,12 +1225,77 @@ def test_text2svg_rejects_text_without_svg():
         raise AssertionError("应当抛出 SVGNotFound")
 
 
+# ------------------------------------------------------- ImageCompositorHelper
+@test
+def test_compositor_layout_helpers():
+    assert CPCORE.sorted_slots({"image_10": "c", "image_2": None, "image_0": "a"}) == ["a", "c"]
+    assert CPCORE.sorted_slots(None) == []
+
+    assert CPCORE.parse_layout("") is None
+    assert CPCORE.parse_layout("{oops") is None
+    assert CPCORE.parse_layout('{"layers": []}') == {"layers": []}
+
+    layout = CPCORE.default_layout([(2048, 1153), (1000, 1000)])
+    assert layout["canvas"] == {"width": 2048, "height": 1153}
+    assert layout["layers"][0]["w"] == 2048 and layout["layers"][0]["h"] == 1153
+    assert layout["layers"][1]["w"] == 1153 and layout["layers"][1]["h"] == 1153
+    assert layout["layers"][1]["x"] == (2048 - 1153) // 2
+
+    layers, ok = CPCORE.layout_layers(layout, [(2048, 1153), (1000, 1000)])
+    assert ok is True and [layer["z"] for layer in layers] == [0, 1]
+    assert CPCORE.layout_layers(layout, [(1, 1)])[1] is False
+
+    first = CPCORE.fingerprint([(0, 10, 10, "aaaa")])
+    second = CPCORE.fingerprint([(0, 10, 10, "bbbb")])
+    assert first != second
+    assert len(first) == 16
+
+    payload = CPCORE.layout_payload(layers, (2048, 1153), "abc")
+    assert payload["fingerprint"] == "abc"
+    assert payload["layers"][0]["id"] == "image_0"
+    assert payload["canvas"] == {"width": 2048, "height": 1153}
+
+    assert CPCORE.canvas_of(None, (640, 480)) == (640, 480)
+    assert CPCORE.canvas_of(None, (0, 0)) == (1024, 1024)
+
+
+@test
+def test_compositor_schema():
+    schema = COMP.ImageCompositorHelperNode.define_schema()
+    assert schema.node_id == "ImageCompositorHelper"
+    assert schema.category == "DeepSeekAPI"
+    assert [item["id"] for item in schema.inputs] == [
+        "images",
+        "canvas_width",
+        "canvas_height",
+        "layout_json",
+    ]
+    slots = schema.inputs[0]
+    assert slots["type"] == "COMFY_AUTOGROW_V3"
+    assert slots["template"].prefix == "image_"
+    assert slots["template"].max == 8
+    assert schema.inputs[3]["multiline"] is True
+    assert [item["display_name"] for item in schema.outputs] == ["image", "mask", "layout"]
+    assert schema.outputs[1]["type"] == "MASK"
+
+
+@test
+def test_compositor_rejects_empty_inputs():
+    try:
+        COMP.ImageCompositorHelperNode.execute(images={})
+    except ValueError as exc:
+        assert "图层" in str(exc)
+    else:
+        raise AssertionError("空输入应当报错")
+
+
 # ------------------------------------------------------------------ i18n 测试
 I18N_STEMS = [
     ("DeepSeekAPI_Model", NS.DeepSeekModelNode),
     ("DeepSeekAPI_Search", SEARCH.DeepSeekSearchNode),
     ("DeepSeekAPI_Balance", BAL.DeepSeekBalanceNode),
     ("DeepSeekAPI_Text2SVG", SVGN.DeepSeekText2SVGNode),
+    ("ImageCompositorHelper", COMP.ImageCompositorHelperNode),
 ]
 
 
@@ -1360,6 +1429,7 @@ def test_locale_inputs_follow_schema_order():
         "DeepSeekAPI_Search": SEARCH.DeepSeekSearchNode.define_schema().kwargs,
         "DeepSeekAPI_Balance": BAL.DeepSeekBalanceNode.define_schema().kwargs,
         "DeepSeekAPI_Text2SVG": SVGN.DeepSeekText2SVGNode.define_schema().kwargs,
+        "ImageCompositorHelper": COMP.ImageCompositorHelperNode.define_schema().kwargs,
     }
     for lang in ("zh", "en"):
         data = json.loads((PKG_DIR / "locales" / lang / "nodeDefs.json").read_text(encoding="utf-8"))

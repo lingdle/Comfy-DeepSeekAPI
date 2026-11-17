@@ -201,5 +201,38 @@
         "tooltip": "Bundled expert SVG generation prompt (example/cases/svg-generator-agent.md); wire it into the model node's system_prompt"
       }
     }
+  },
+  "ImageCompositorHelper": {
+    "display_name": "Layer Compositor",
+    "description": "Stacks transparent images in array order into one composite: click Open Compositor, drag/resize/rotate/reorder layers on the canvas, save and run. A 4-channel input uses channel 4 as alpha, 3 channels are treated as opaque. Outputs a 3-channel IMAGE, a MASK and the layout JSON.",
+    "inputs": {
+      "images": {
+        "name": "images",
+        "tooltip": "Stacked bottom-to-top as image_0 ... image_7; gaps are allowed. 4 channels = alpha, 3 channels = opaque"
+      },
+      "canvas_width": {
+        "name": "canvas_width",
+        "tooltip": "Canvas width; 0 = use the saved canvas, else the first image size"
+      },
+      "canvas_height": {
+        "name": "canvas_height",
+        "tooltip": "Canvas height; 0 = use the saved canvas, else the first image size"
+      },
+      "layout_json": {
+        "name": "layout_json",
+        "tooltip": "Layout JSON (x / y / z / w / h / rotation / opacity per layer); invalid JSON falls back to the default layout"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Composite result, 3 channels (alpha lives in the mask)"
+      },
+      "1": {
+        "tooltip": "Composite alpha of the whole canvas"
+      },
+      "2": {
+        "tooltip": "Layout JSON actually used (x / y / z / w / h per layer)"
+      }
+    }
   }
 }

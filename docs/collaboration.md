@@ -14,6 +14,8 @@
 | locales/zh, locales/en | nodeDefs.json：节点标题、描述、输入 tooltip 的本地化 |
 | example/workflows/ | 示例工作流（json）+ 同名缩略图（jpg） |
 | example/cases/ | 案例：配合节点使用的提示词与说明（ASCII 文件名） |
+| web/ + frontend/ | 图层合成器的前端：web/main.js 是 esbuild 产物（提交进仓库），frontend/src 是 TS 源码 |
+| nodes_compositor.py + core/compositor.py · core/render.py | 图层合成助手：布局/指纹（纯函数）与 torch 渲染 |
 | assets/ | 图标、横幅、赞助码 |
 | tests/run_tests.py | 单元测试（桩件模拟 ComfyUI，不联网） |
 | tools/ | 开发工具：审计、示例校验、打包、API 兜底推送 |
@@ -34,6 +36,7 @@
 | python3 tools/validate_example.py | 示例工作流结构：节点 id、link 双向、控件数量 | 改过示例或字段顺序后 |
 | python3 tools/build_zip.py | 打包到 dist/Comfy-DeepSeekAPI-v版本.zip | 准备发布时 |
 | python3 tools/push_via_api.py | github.com 的 git 端口不通时，用 REST API 提交 | 网络异常时兜底 |
+| cd frontend && npm install && npm run build | esbuild 打包图层合成器前端 → web/main.js（产物要提交） | 改过 frontend/src 后 |
 
 判断网络：curl -m 8 https://github.com；不通再走 API 兜底，并先看看 api.github.com 是否正常。
 
