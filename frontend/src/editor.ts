@@ -21,7 +21,7 @@ export interface EditorInput {
 }
 
 export interface EditorCallbacks {
-  save: (layout: any) => void;
+  save: (layout: any, run: boolean) => void;
   reload: () => Promise<EditorInput | null>;
   close: () => void;
 }
@@ -44,9 +44,8 @@ function injectStyle() {
   style.textContent = `
   .icx-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;
     background: rgba(6,8,14,.72); backdrop-filter: blur(2px); font-family: system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-  .icx-panel { width: min(1440px, 95vw); height: min(900px, 94vh); display: grid; grid-template-rows: 46px 1fr 40px;
-    grid-template-columns: 232px 1fr 272px; background: #1b1b21; color: #e6ebf5; border: 1px solid #33333d; border-radius: 12px; overflow: hidden;
-    box-shadow: 0 24px 64px rgba(0,0,0,.55); }
+  .icx-panel { width: 100vw; height: 100vh; display: grid; grid-template-rows: 46px 1fr 44px;
+    grid-template-columns: 232px 1fr 272px; background: #1b1b21; color: #e6ebf5; border: 0; border-radius: 0; overflow: hidden; }
   .icx-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid #2c2c36; }
   .icx-title { font-size: 14px; font-weight: 600; }
   .icx-hint { font-size: 12px; color: #8d97ab; }
@@ -83,6 +82,7 @@ function injectStyle() {
   .icx-pair { display: flex; gap: 8px; }
   .icx-sub { font-size: 11px; color: #7f8ba0; }
   .icx-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-top: 1px solid #2c2c36; }
+  .icx-foot-side { display: flex; align-items: center; gap: 8px; }
   .icx-empty { color: #7f8ba0; font-size: 12px; padding: 10px 6px; }
   `;
   document.head.appendChild(style);
@@ -166,54 +166,64 @@ export class Editor {
     if (this.stale) this.hintEl.classList.add("warn");
     head.appendChild(this.hintEl);
     head.appendChild(el("span", "icx-spacer"));
-
-    this.undoBtn = el("button", "icx-btn", "↶ 撤销");
-    this.undoBtn.title = "撤销（Ctrl+Z）";
-    this.undoBtn.onclick = () => this.undo();
-    head.appendChild(this.undoBtn);
-
-    this.redoBtn = el("button", "icx-btn", "↷ 重做");
-    this.redoBtn.title = "重做（Ctrl+Shift+Z / Ctrl+Y）";
-    this.redoBtn.onclick = () => this.redo();
-    head.appendChild(this.redoBtn);
-
-    const reload = el("button", "icx-btn", "重新加载输入");
-    reload.onclick = () => this.reload();
-    head.appendChild(reload);
-
-    const reset = el("button", "icx-btn", "恢复");
-    reset.onclick = () => this.restore();
-    head.appendChild(reset);
-
-    const close = el("button", "icx-btn", "关闭");
-    close.onclick = () => this.close(false);
-    head.appendChild(close);
-
-    const save = el("button", "icx-btn primary", "锁定并保存");
-    save.onclick = () => this.close(true);
-    head.appendChild(save);
+    head.appendChild(el("span", "icx-sub", "滚轮缩放 · 空格/中键平移 · 方向键微调 · Esc 保存并关闭"));
     return head;
   }
 
   private buildFooter() {
     const foot = el("div", "icx-foot");
-    foot.appendChild(el("span", "icx-sub", "滚轮缩放 · 空格/中键拖动平移 · 方向键微调 · Esc 保存并关闭"));
-    foot.appendChild(el("span", "icx-spacer"));
+
+    const left = el("div", "icx-foot-side");
     const fit = el("button", "icx-mini", "Fit");
     fit.style.width = "36px";
+    fit.title = "缩放到适合窗口";
     fit.onclick = () => {
       this.fitView();
       this.requestRender();
     };
-    foot.appendChild(fit);
+    left.appendChild(fit);
     const zoomOut = el("button", "icx-mini", "−");
     zoomOut.onclick = () => this.zoomBy(1 / 1.2);
-    foot.appendChild(zoomOut);
+    left.appendChild(zoomOut);
     this.zoomEl = el("span", "icx-sub", "100%");
-    foot.appendChild(this.zoomEl);
+    left.appendChild(this.zoomEl);
     const zoomIn = el("button", "icx-mini", "+");
     zoomIn.onclick = () => this.zoomBy(1.2);
-    foot.appendChild(zoomIn);
+    left.appendChild(zoomIn);
+    foot.appendChild(left);
+
+    foot.appendChild(el("span", "icx-spacer"));
+
+    const right = el("div", "icx-foot-side");
+
+    this.undoBtn = el("button", "icx-btn", "↶ 撤销");
+    this.undoBtn.title = "撤销（Ctrl+Z）";
+    this.undoBtn.onclick = () => this.undo();
+    right.appendChild(this.undoBtn);
+
+    this.redoBtn = el("button", "icx-btn", "↷ 重做");
+    this.redoBtn.title = "重做（Ctrl+Shift+Z / Ctrl+Y）";
+    this.redoBtn.onclick = () => this.redo();
+    right.appendChild(this.redoBtn);
+
+    const reload = el("button", "icx-btn", "重新加载输入");
+    reload.onclick = () => this.reload();
+    right.appendChild(reload);
+
+    const reset = el("button", "icx-btn", "恢复");
+    reset.onclick = () => this.restore();
+    right.appendChild(reset);
+
+    const close = el("button", "icx-btn", "关闭");
+    close.onclick = () => this.close(false);
+    right.appendChild(close);
+
+    const save = el("button", "icx-btn primary", "锁定并保存并运行");
+    save.title = "保存布局并立即运行本节点";
+    save.onclick = () => this.close(true, true);
+    right.appendChild(save);
+
+    foot.appendChild(right);
     return foot;
   }
 
@@ -967,13 +977,13 @@ export class Editor {
     this.requestRender();
   }
 
-  private close(save: boolean) {
+  private close(save: boolean, run = false) {
     if (this.closed) return;
     this.closed = true;
     cancelAnimationFrame(this.raf);
     window.removeEventListener("keydown", this.onKeyDownBound);
     this.root.remove();
-    if (save) this.callbacks.save(this.serialize());
+    if (save) this.callbacks.save(this.serialize(), run);
     this.callbacks.close();
   }
 

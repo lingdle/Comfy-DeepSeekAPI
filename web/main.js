@@ -433,9 +433,8 @@ function injectStyle() {
   style.textContent = `
   .icx-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;
     background: rgba(6,8,14,.72); backdrop-filter: blur(2px); font-family: system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-  .icx-panel { width: min(1440px, 95vw); height: min(900px, 94vh); display: grid; grid-template-rows: 46px 1fr 40px;
-    grid-template-columns: 232px 1fr 272px; background: #1b1b21; color: #e6ebf5; border: 1px solid #33333d; border-radius: 12px; overflow: hidden;
-    box-shadow: 0 24px 64px rgba(0,0,0,.55); }
+  .icx-panel { width: 100vw; height: 100vh; display: grid; grid-template-rows: 46px 1fr 44px;
+    grid-template-columns: 232px 1fr 272px; background: #1b1b21; color: #e6ebf5; border: 0; border-radius: 0; overflow: hidden; }
   .icx-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid #2c2c36; }
   .icx-title { font-size: 14px; font-weight: 600; }
   .icx-hint { font-size: 12px; color: #8d97ab; }
@@ -472,6 +471,7 @@ function injectStyle() {
   .icx-pair { display: flex; gap: 8px; }
   .icx-sub { font-size: 11px; color: #7f8ba0; }
   .icx-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-top: 1px solid #2c2c36; }
+  .icx-foot-side { display: flex; align-items: center; gap: 8px; }
   .icx-empty { color: #7f8ba0; font-size: 12px; padding: 10px 6px; }
   `;
   document.head.appendChild(style);
@@ -549,47 +549,53 @@ var Editor = class {
     if (this.stale) this.hintEl.classList.add("warn");
     head.appendChild(this.hintEl);
     head.appendChild(el("span", "icx-spacer"));
-    this.undoBtn = el("button", "icx-btn", "\u21B6 \u64A4\u9500");
-    this.undoBtn.title = "\u64A4\u9500\uFF08Ctrl+Z\uFF09";
-    this.undoBtn.onclick = () => this.undo();
-    head.appendChild(this.undoBtn);
-    this.redoBtn = el("button", "icx-btn", "\u21B7 \u91CD\u505A");
-    this.redoBtn.title = "\u91CD\u505A\uFF08Ctrl+Shift+Z / Ctrl+Y\uFF09";
-    this.redoBtn.onclick = () => this.redo();
-    head.appendChild(this.redoBtn);
-    const reload = el("button", "icx-btn", "\u91CD\u65B0\u52A0\u8F7D\u8F93\u5165");
-    reload.onclick = () => this.reload();
-    head.appendChild(reload);
-    const reset = el("button", "icx-btn", "\u6062\u590D");
-    reset.onclick = () => this.restore();
-    head.appendChild(reset);
-    const close = el("button", "icx-btn", "\u5173\u95ED");
-    close.onclick = () => this.close(false);
-    head.appendChild(close);
-    const save = el("button", "icx-btn primary", "\u9501\u5B9A\u5E76\u4FDD\u5B58");
-    save.onclick = () => this.close(true);
-    head.appendChild(save);
+    head.appendChild(el("span", "icx-sub", "\u6EDA\u8F6E\u7F29\u653E \xB7 \u7A7A\u683C/\u4E2D\u952E\u5E73\u79FB \xB7 \u65B9\u5411\u952E\u5FAE\u8C03 \xB7 Esc \u4FDD\u5B58\u5E76\u5173\u95ED"));
     return head;
   }
   buildFooter() {
     const foot = el("div", "icx-foot");
-    foot.appendChild(el("span", "icx-sub", "\u6EDA\u8F6E\u7F29\u653E \xB7 \u7A7A\u683C/\u4E2D\u952E\u62D6\u52A8\u5E73\u79FB \xB7 \u65B9\u5411\u952E\u5FAE\u8C03 \xB7 Esc \u4FDD\u5B58\u5E76\u5173\u95ED"));
-    foot.appendChild(el("span", "icx-spacer"));
+    const left = el("div", "icx-foot-side");
     const fit = el("button", "icx-mini", "Fit");
     fit.style.width = "36px";
+    fit.title = "\u7F29\u653E\u5230\u9002\u5408\u7A97\u53E3";
     fit.onclick = () => {
       this.fitView();
       this.requestRender();
     };
-    foot.appendChild(fit);
+    left.appendChild(fit);
     const zoomOut = el("button", "icx-mini", "\u2212");
     zoomOut.onclick = () => this.zoomBy(1 / 1.2);
-    foot.appendChild(zoomOut);
+    left.appendChild(zoomOut);
     this.zoomEl = el("span", "icx-sub", "100%");
-    foot.appendChild(this.zoomEl);
+    left.appendChild(this.zoomEl);
     const zoomIn = el("button", "icx-mini", "+");
     zoomIn.onclick = () => this.zoomBy(1.2);
-    foot.appendChild(zoomIn);
+    left.appendChild(zoomIn);
+    foot.appendChild(left);
+    foot.appendChild(el("span", "icx-spacer"));
+    const right = el("div", "icx-foot-side");
+    this.undoBtn = el("button", "icx-btn", "\u21B6 \u64A4\u9500");
+    this.undoBtn.title = "\u64A4\u9500\uFF08Ctrl+Z\uFF09";
+    this.undoBtn.onclick = () => this.undo();
+    right.appendChild(this.undoBtn);
+    this.redoBtn = el("button", "icx-btn", "\u21B7 \u91CD\u505A");
+    this.redoBtn.title = "\u91CD\u505A\uFF08Ctrl+Shift+Z / Ctrl+Y\uFF09";
+    this.redoBtn.onclick = () => this.redo();
+    right.appendChild(this.redoBtn);
+    const reload = el("button", "icx-btn", "\u91CD\u65B0\u52A0\u8F7D\u8F93\u5165");
+    reload.onclick = () => this.reload();
+    right.appendChild(reload);
+    const reset = el("button", "icx-btn", "\u6062\u590D");
+    reset.onclick = () => this.restore();
+    right.appendChild(reset);
+    const close = el("button", "icx-btn", "\u5173\u95ED");
+    close.onclick = () => this.close(false);
+    right.appendChild(close);
+    const save = el("button", "icx-btn primary", "\u9501\u5B9A\u5E76\u4FDD\u5B58\u5E76\u8FD0\u884C");
+    save.title = "\u4FDD\u5B58\u5E03\u5C40\u5E76\u7ACB\u5373\u8FD0\u884C\u672C\u8282\u70B9";
+    save.onclick = () => this.close(true, true);
+    right.appendChild(save);
+    foot.appendChild(right);
     return foot;
   }
   bindEvents() {
@@ -1260,13 +1266,13 @@ var Editor = class {
     this.refreshUI();
     this.requestRender();
   }
-  close(save) {
+  close(save, run = false) {
     if (this.closed) return;
     this.closed = true;
     cancelAnimationFrame(this.raf);
     window.removeEventListener("keydown", this.onKeyDownBound);
     this.root.remove();
-    if (save) this.callbacks.save(this.serialize());
+    if (save) this.callbacks.save(this.serialize(), run);
     this.callbacks.close();
   }
   /** 外部数据刷新（例如节点重新执行后）。 */
@@ -1310,6 +1316,25 @@ function layerFromPayload(entry, saved, index) {
 // src/index.ts
 var NODE_TYPE = "ImageCompositorHelper";
 var WIDGET_NAME = "layout_json";
+function runNow(node) {
+  const anyApp = app;
+  try {
+    if (typeof anyApp?.queuePrompt === "function") {
+      anyApp.queuePrompt(0, 1);
+      return true;
+    }
+  } catch (error) {
+    console.warn("[ICX] queuePrompt \u8C03\u7528\u5931\u8D25", error);
+  }
+  const button = document.querySelector(
+    "#queue-button, [data-testid='queue-button'], .queue-button"
+  );
+  if (button) {
+    button.click();
+    return true;
+  }
+  return false;
+}
 function buildContainer(node) {
   const container = document.createElement("div");
   container.style.cssText = "display:flex;flex-direction:column;gap:6px;padding:6px;box-sizing:border-box;width:100%;";
@@ -1372,9 +1397,14 @@ async function openEditor(node) {
     return;
   }
   const editor = new Editor(state, {
-    save: (layout) => {
+    save: (layout, run) => {
       setWidgetValue(node, WIDGET_NAME, JSON.stringify(layout));
-      node._icx.status.textContent = "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF1A\u518D\u8FD0\u884C\u4E00\u6B21\u5373\u53EF\u5408\u6210";
+      if (!run) {
+        node._icx.status.textContent = "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF1A\u518D\u8FD0\u884C\u4E00\u6B21\u5373\u53EF\u5408\u6210";
+        return;
+      }
+      const queued = runNow(node);
+      node._icx.status.textContent = queued ? "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF0C\u6B63\u5728\u8FD0\u884C\u2026" : "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF1A\u8BF7\u70B9 Run \u8FD0\u884C";
     },
     reload: async () => {
       const fresh = await loadLayers(node);

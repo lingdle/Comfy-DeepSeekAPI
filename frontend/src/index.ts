@@ -8,6 +8,27 @@ import type { ExecLayer, ExecPayload, Layer } from "./types";
 const NODE_TYPE = "ImageCompositorHelper";
 const WIDGET_NAME = "layout_json";
 
+/** 让 ComfyUI 立刻跑一次（保存布局后自动合成）。 */
+function runNow(node: any): boolean {
+  const anyApp: any = app;
+  try {
+    if (typeof anyApp?.queuePrompt === "function") {
+      anyApp.queuePrompt(0, 1);
+      return true;
+    }
+  } catch (error) {
+    console.warn("[ICX] queuePrompt 调用失败", error);
+  }
+  const button = document.querySelector<HTMLButtonElement>(
+    "#queue-button, [data-testid='queue-button'], .queue-button",
+  );
+  if (button) {
+    button.click();
+    return true;
+  }
+  return false;
+}
+
 function buildContainer(node: any) {
   const container = document.createElement("div");
   container.style.cssText =
@@ -86,9 +107,16 @@ async function openEditor(node: any) {
   }
 
   const editor = new Editor(state, {
-    save: (layout: any) => {
+    save: (layout: any, run: boolean) => {
       setWidgetValue(node, WIDGET_NAME, JSON.stringify(layout));
-      node._icx.status.textContent = "布局已保存：再运行一次即可合成";
+      if (!run) {
+        node._icx.status.textContent = "布局已保存：再运行一次即可合成";
+        return;
+      }
+      const queued = runNow(node);
+      node._icx.status.textContent = queued
+        ? "布局已保存，正在运行…"
+        : "布局已保存：请点 Run 运行";
     },
     reload: async () => {
       const fresh = await loadLayers(node);
