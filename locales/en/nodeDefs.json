@@ -176,5 +176,27 @@
         "tooltip": "Raw API response JSON, e.g. {\"is_available\": true, \"balance_infos\": [...]}"
       }
     }
+  },
+  "DeepSeekAPI_Text2SVG": {
+    "display_name": "Text2SVG",
+    "description": "Extracts the SVG from DeepSeek text output and returns it as ComfyUI's SVG type. Accepts fenced svg blocks, unlabelled code blocks and inline <svg>...</svg>; only the first SVG is used. Preview: writes a copy into the output folder and shows it on the node.",
+    "inputs": {
+      "text": {
+        "name": "text",
+        "tooltip": "Raw model output; code fences and surrounding prose are fine"
+      },
+      "preview": {
+        "name": "preview",
+        "tooltip": "Write the SVG into the output folder and preview it on the node; turn off to only emit the type"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "ComfyUI SVG type (connect to any node that accepts SVG)"
+      },
+      "1": {
+        "tooltip": "Extracted SVG source, handy for copying or debugging"
+      }
+    }
   }
 }

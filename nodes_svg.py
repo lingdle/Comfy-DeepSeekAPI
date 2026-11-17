@@ -1,0 +1,105 @@
+"""Text2SVG 节点（V3 schema）。
+
+把模型输出文本里的 SVG 提取出来，转成 ComfyUI 的 SVG 类型；
+同时写一份到 output 目录，借 ui.images 在节点上直接预览。
+"""
+
+import logging
+from io import BytesIO
+
+from comfy_api.latest import io
+
+from .core.svg import FENCE, SVGNotFound, extract_svg, save_preview
+
+LOG = logging.getLogger("DeepSeekAPI")
+
+NODE_ID = "DeepSeekAPI_Text2SVG"
+
+PROMPT_HINT = (
+    "例如：" + "请只输出一个 SVG，放在 " + FENCE + "svg 代码块里，不要输出别的解释"
+)
+
+
+def _svg_value(markup):
+    """构造 SVG 类型的运行时值：SVG([BytesIO(...)])。"""
+    payload = markup.encode("utf-8")
+    svg_cls = getattr(io.SVG, "Type", None)
+    if svg_cls is None:  # pragma: no cover - 极老版本没有 SVG 类型
+        return payload
+    return svg_cls([BytesIO(payload)])
+
+
+class DeepSeekText2SVGNode(io.ComfyNode):
+    """文本里的 SVG → ComfyUI SVG 类型 + 节点内预览。"""
+
+    @classmethod
+    def define_schema(cls) -> io.Schema:
+        return io.Schema(
+            node_id=NODE_ID,
+            display_name="Text2SVG 文本转 SVG",
+            category="DeepSeekAPI",
+            description=(
+                "把 DeepSeek 输出文本里的 SVG 提取出来，转成 ComfyUI 的 SVG 类型。"
+                "支持 " + FENCE + "svg 代码块、无语言标记的代码块、正文里直接夹的 <svg>…</svg>；"
+                "多个 SVG 只取第一个。预览：写一份到 output 目录并在节点上显示。"
+            ),
+            search_aliases=[
+                "svg",
+                "vector",
+                "text2svg",
+                "icon",
+                "矢量",
+                "图标",
+                "转svg",
+            ],
+            inputs=[
+                io.String.Input(
+                    "text",
+                    default="",
+                    multiline=True,
+                    placeholder="把 DeepSeek 节点的 text 接进来；或直接粘贴模型输出",
+                    tooltip="模型输出原文；有没有代码块围栏、前后有没有解释都行",
+                ),
+                io.Boolean.Input(
+                    "preview",
+                    default=True,
+                    tooltip="写一份 SVG 到 output 目录并在节点上预览；关掉则只输出类型、不落盘",
+                    advanced=True,
+                ),
+            ],
+            outputs=[
+                io.SVG.Output(
+                    display_name="svg",
+                    tooltip="ComfyUI 的 SVG 类型（可接任何以 SVG 为输入的节点）",
+                ),
+                io.String.Output(
+                    display_name="svg_text",
+                    tooltip="提取出来的 SVG 源码，便于复制或排查",
+                ),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, text="", preview=True) -> io.NodeOutput:
+        markup = extract_svg(text)
+        if not markup:
+            raise SVGNotFound(
+                "文本里没有找到 SVG：需要 <svg>…</svg> 或 " + FENCE + "svg 代码块。" + PROMPT_HINT
+            )
+
+        entry = None
+        if preview:
+            try:
+                entry = save_preview(markup.encode("utf-8"))
+            except Exception as exc:  # pragma: no cover - 写盘失败不影响输出
+                LOG.warning("SVG 预览落盘失败，改为文本预览：%s", exc)
+
+        ui = {"images": [entry]} if entry else {"text": [markup]}
+
+        value = _svg_value(markup)
+        LOG.info("Text2SVG：%d 字节，预览=%s", len(markup), bool(entry))
+
+        try:
+            return io.NodeOutput(value, markup, ui=ui)
+        except TypeError:  # pragma: no cover - 老版本 io.NodeOutput 不支持 ui
+            return io.NodeOutput(value, markup)

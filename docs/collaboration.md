@@ -9,7 +9,7 @@
 
 | 路径 | 内容 |
 |---|---|
-| nodes.py / nodes_search.py / nodes_balance.py | 三个节点的 V3 schema 与 execute |
+| nodes.py / nodes_search.py / nodes_balance.py / nodes_svg.py | 四个节点的 V3 schema 与 execute |
 | core/ | HTTP 客户端、配置解析、错误映射、定价、图像编码、搜索语法拼装 |
 | locales/zh, locales/en | nodeDefs.json：节点标题、描述、输入 tooltip 的本地化 |
 | example/workflows/ | 示例工作流（json）+ 同名缩略图（jpg） |

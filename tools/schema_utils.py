@@ -8,7 +8,7 @@ import ast
 import re
 from pathlib import Path
 
-NODE_FILES = ("nodes.py", "nodes_search.py", "nodes_balance.py")
+NODE_FILES = ("nodes.py", "nodes_search.py", "nodes_balance.py", "nodes_svg.py")
 
 TYPE_MAP = {
     "String": "STRING",

@@ -176,5 +176,27 @@
         "tooltip": "接口原始 JSON，例如"
       }
     }
+  },
+  "DeepSeekAPI_Text2SVG": {
+    "display_name": "Text2SVG 文本转 SVG",
+    "description": "把 DeepSeek 输出文本里的 SVG 提取出来，转成 ComfyUI 的 SVG 类型。支持 svg 代码块、无语言标记的代码块、正文里直接夹的 <svg>…</svg>；多个 SVG 只取第一个。预览：写一份到 output 目录并在节点上显示。",
+    "inputs": {
+      "text": {
+        "name": "text",
+        "tooltip": "模型输出原文；有没有代码块围栏、前后有没有解释都行"
+      },
+      "preview": {
+        "name": "preview",
+        "tooltip": "写一份 SVG 到 output 目录并在节点上预览；关掉则只输出类型、不落盘"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "ComfyUI 的 SVG 类型（可接任何以 SVG 为输入的节点）"
+      },
+      "1": {
+        "tooltip": "提取出来的 SVG 源码，便于复制或排查"
+      }
+    }
   }
 }

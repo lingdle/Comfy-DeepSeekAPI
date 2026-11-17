@@ -34,6 +34,14 @@ class _Type:
         return record
 
 
+class _SVGType(_Type):
+    class _Value:
+        def __init__(self, data):
+            self.data = data
+
+    Type = _Value
+
+
 class _AutogrowTemplatePrefix:
     def __init__(self, input=None, prefix="", min=0, max=10):
         self.input = input
@@ -91,6 +99,7 @@ def _install_stub():
         Combo=_Type("COMBO"),
         Image=_Type("IMAGE"),
         Mask=_Type("MASK"),
+        SVG=_SVGType("SVG"),
         Autogrow=_Autogrow,
     )
     latest = types.ModuleType("comfy_api.latest")
@@ -124,6 +133,8 @@ PKG = _load_package()
 NS = PKG.nodes
 SEARCH = sys.modules["dsapi.nodes_search"]
 BAL = sys.modules["dsapi.nodes_balance"]
+SVGN = sys.modules["dsapi.nodes_svg"]
+SVGUTIL = sys.modules["dsapi.core.svg"]
 WEB = sys.modules["dsapi.core.websearch"]
 SQ = sys.modules["dsapi.core.searchquery"]
 CFG = sys.modules["dsapi.core.config"]
@@ -454,6 +465,7 @@ def test_entrypoint_returns_nodes():
         NS.DeepSeekModelNode,
         SEARCH.DeepSeekSearchNode,
         BAL.DeepSeekBalanceNode,
+        SVGN.DeepSeekText2SVGNode,
     ]
 
 
@@ -1115,11 +1127,98 @@ def test_balance_execute_currency_and_unavailable():
     assert json.loads(result.results[1])["is_available"] is False
 
 
+# ------------------------------------------------------------------ Text2SVG
+@test
+def test_extract_svg_variants():
+    fenced = "说明\n```svg\n<svg width='10'><rect/></svg>\n```\n结尾"
+    assert SVGUTIL.extract_svg(fenced).startswith('<svg xmlns=')
+
+    plain = "```\n<svg><circle/></svg>\n```"
+    assert "<circle/>" in SVGUTIL.extract_svg(plain)
+
+    raw = "看图 <svg xmlns='http://www.w3.org/2000/svg'><path d='M0 0'/></svg> 完"
+    assert SVGUTIL.extract_svg(raw) == "<svg xmlns='http://www.w3.org/2000/svg'><path d='M0 0'/></svg>"
+
+    assert SVGUTIL.extract_svg("没有图形") is None
+    assert SVGUTIL.extract_svg("") is None
+
+    two = "<svg id='a'></svg><svg id='b'></svg>"
+    assert "id='a'" in SVGUTIL.extract_svg(two)
+
+
+@test
+def test_text2svg_schema():
+    schema = SVGN.DeepSeekText2SVGNode.define_schema()
+    assert schema.node_id == "DeepSeekAPI_Text2SVG"
+    assert schema.category == "DeepSeekAPI"
+    assert [item["id"] for item in schema.inputs] == ["text", "preview"]
+    assert schema.inputs[0]["multiline"] is True
+    assert schema.inputs[1]["default"] is True
+    assert [item["display_name"] for item in schema.outputs] == ["svg", "svg_text"]
+    assert schema.outputs[0]["type"] == "SVG"
+
+
+@test
+def test_text2svg_execute_preview():
+    original = SVGN.save_preview
+    seen = {}
+
+    def fake_save(payload, prefix="text2svg"):
+        seen["prefix"] = prefix
+        seen["bytes"] = payload
+        return {"filename": "text2svg_abc.svg", "subfolder": "", "type": "output"}
+
+    SVGN.save_preview = fake_save
+    try:
+        result = SVGN.DeepSeekText2SVGNode.execute(
+            text="```svg\n<svg width='5'><rect/></svg>\n```"
+        )
+    finally:
+        SVGN.save_preview = original
+
+    value = result.results[0]
+    assert isinstance(value, SVGN.io.SVG.Type)
+    assert b"<rect" in value.data[0].getvalue()
+    assert result.results[1].startswith("<svg")
+    assert result.ui == {
+        "images": [{"filename": "text2svg_abc.svg", "subfolder": "", "type": "output"}]
+    }
+    assert seen["prefix"] == "text2svg"
+    assert b"<svg" in seen["bytes"]
+
+
+@test
+def test_text2svg_execute_without_preview():
+    original = SVGN.save_preview
+
+    def boom(payload, prefix="text2svg"):
+        raise AssertionError("preview=False 时不该落盘")
+
+    SVGN.save_preview = boom
+    try:
+        result = SVGN.DeepSeekText2SVGNode.execute(text="<svg><circle/></svg>", preview=False)
+    finally:
+        SVGN.save_preview = original
+
+    assert result.ui["text"][0].startswith("<svg")
+
+
+@test
+def test_text2svg_rejects_text_without_svg():
+    try:
+        SVGN.DeepSeekText2SVGNode.execute(text="只有文字，没有图")
+    except SVGUTIL.SVGNotFound as exc:
+        assert "SVG" in str(exc)
+    else:
+        raise AssertionError("应当抛出 SVGNotFound")
+
+
 # ------------------------------------------------------------------ i18n 测试
 I18N_STEMS = [
     ("DeepSeekAPI_Model", NS.DeepSeekModelNode),
     ("DeepSeekAPI_Search", SEARCH.DeepSeekSearchNode),
     ("DeepSeekAPI_Balance", BAL.DeepSeekBalanceNode),
+    ("DeepSeekAPI_Text2SVG", SVGN.DeepSeekText2SVGNode),
 ]
 
 
@@ -1252,6 +1351,7 @@ def test_locale_inputs_follow_schema_order():
         "DeepSeekAPI_Model": NS.DeepSeekModelNode.define_schema().kwargs,
         "DeepSeekAPI_Search": SEARCH.DeepSeekSearchNode.define_schema().kwargs,
         "DeepSeekAPI_Balance": BAL.DeepSeekBalanceNode.define_schema().kwargs,
+        "DeepSeekAPI_Text2SVG": SVGN.DeepSeekText2SVGNode.define_schema().kwargs,
     }
     for lang in ("zh", "en"):
         data = json.loads((PKG_DIR / "locales" / lang / "nodeDefs.json").read_text(encoding="utf-8"))
