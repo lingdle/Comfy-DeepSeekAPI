@@ -55,6 +55,7 @@ function injectStyle() {
   .icx-btn { height: 28px; padding: 0 12px; border-radius: 7px; border: 1px solid #3a3a46; background: #24242c; color: #dfe6f3;
     font-size: 12px; cursor: pointer; }
   .icx-btn:hover { background: #2d2d38; }
+  .icx-btn:disabled { opacity: .4; cursor: default; background: #24242c; }
   .icx-btn.primary { background: #2b6ee8; border-color: #2b6ee8; color: #fff; }
   .icx-btn.primary:hover { background: #3a7df5; }
   .icx-layers { border-right: 1px solid #2c2c36; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
@@ -96,6 +97,8 @@ export class Editor {
   private propsEl!: HTMLDivElement;
   private hintEl!: HTMLSpanElement;
   private zoomEl!: HTMLSpanElement;
+  private undoBtn!: HTMLButtonElement;
+  private redoBtn!: HTMLButtonElement;
 
   private canvas: CanvasSize;
   private layers: Layer[];
@@ -137,6 +140,15 @@ export class Editor {
     panel.appendChild(this.buildFooter());
     this.root.appendChild(panel);
     document.body.appendChild(this.root);
+    // 聚焦到编辑器本身：否则 Ctrl+Z 会被 ComfyUI 画布的全局快捷键接走
+    this.root.tabIndex = -1;
+    this.root.style.outline = "none";
+    this.root.addEventListener("pointerdown", (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName)) return;
+      this.root.focus({ preventScroll: true });
+    });
+    this.root.focus({ preventScroll: true });
     this.ctx = this.canvasEl.getContext("2d") as CanvasRenderingContext2D;
 
     this.bindEvents();
@@ -154,6 +166,16 @@ export class Editor {
     if (this.stale) this.hintEl.classList.add("warn");
     head.appendChild(this.hintEl);
     head.appendChild(el("span", "icx-spacer"));
+
+    this.undoBtn = el("button", "icx-btn", "↶ 撤销");
+    this.undoBtn.title = "撤销（Ctrl+Z）";
+    this.undoBtn.onclick = () => this.undo();
+    head.appendChild(this.undoBtn);
+
+    this.redoBtn = el("button", "icx-btn", "↷ 重做");
+    this.redoBtn.title = "重做（Ctrl+Shift+Z / Ctrl+Y）";
+    this.redoBtn.onclick = () => this.redo();
+    head.appendChild(this.redoBtn);
 
     const reload = el("button", "icx-btn", "重新加载输入");
     reload.onclick = () => this.reload();
@@ -212,23 +234,30 @@ export class Editor {
     if (this.closed) return;
     const target = event.target as HTMLElement | null;
     if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
-    if (event.key === "Escape") {
+    const swallow = (action: () => void) => {
       event.preventDefault();
-      this.close(true);
+      // 阻止继续冒泡到 ComfyUI 画布的全局快捷键
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      action();
+    };
+
+    if (event.key === "Escape") {
+      swallow(() => this.close(true));
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
-      event.preventDefault();
-      if (event.shiftKey) this.redo();
-      else this.undo();
+      swallow(() => (event.shiftKey ? this.redo() : this.undo()));
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
-      event.preventDefault();
-      this.redo();
+      swallow(() => this.redo());
       return;
     }
     if (event.code === "Space") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       this.spaceDown = true;
       return;
     }
@@ -238,6 +267,8 @@ export class Editor {
     };
     if (nudge[event.key] && this.selection.size) {
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       const [dx, dy] = nudge[event.key];
       for (const layer of this.selected()) {
         layer.x += dx;
@@ -567,7 +598,13 @@ export class Editor {
     this.historyIndex = 0;
   }
 
+  private updateHistoryButtons() {
+    if (this.undoBtn) this.undoBtn.disabled = this.historyIndex <= 0;
+    if (this.redoBtn) this.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+  }
+
   private refreshUI() {
+    this.updateHistoryButtons();
     this.renderList();
     this.renderProps();
     if (this.hintEl) {

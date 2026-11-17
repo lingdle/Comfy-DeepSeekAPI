@@ -444,6 +444,7 @@ function injectStyle() {
   .icx-btn { height: 28px; padding: 0 12px; border-radius: 7px; border: 1px solid #3a3a46; background: #24242c; color: #dfe6f3;
     font-size: 12px; cursor: pointer; }
   .icx-btn:hover { background: #2d2d38; }
+  .icx-btn:disabled { opacity: .4; cursor: default; background: #24242c; }
   .icx-btn.primary { background: #2b6ee8; border-color: #2b6ee8; color: #fff; }
   .icx-btn.primary:hover { background: #3a7df5; }
   .icx-layers { border-right: 1px solid #2c2c36; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
@@ -525,6 +526,14 @@ var Editor = class {
     panel.appendChild(this.buildFooter());
     this.root.appendChild(panel);
     document.body.appendChild(this.root);
+    this.root.tabIndex = -1;
+    this.root.style.outline = "none";
+    this.root.addEventListener("pointerdown", (event) => {
+      const target = event.target;
+      if (target && ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName)) return;
+      this.root.focus({ preventScroll: true });
+    });
+    this.root.focus({ preventScroll: true });
     this.ctx = this.canvasEl.getContext("2d");
     this.bindEvents();
     this.pushHistory();
@@ -540,6 +549,14 @@ var Editor = class {
     if (this.stale) this.hintEl.classList.add("warn");
     head.appendChild(this.hintEl);
     head.appendChild(el("span", "icx-spacer"));
+    this.undoBtn = el("button", "icx-btn", "\u21B6 \u64A4\u9500");
+    this.undoBtn.title = "\u64A4\u9500\uFF08Ctrl+Z\uFF09";
+    this.undoBtn.onclick = () => this.undo();
+    head.appendChild(this.undoBtn);
+    this.redoBtn = el("button", "icx-btn", "\u21B7 \u91CD\u505A");
+    this.redoBtn.title = "\u91CD\u505A\uFF08Ctrl+Shift+Z / Ctrl+Y\uFF09";
+    this.redoBtn.onclick = () => this.redo();
+    head.appendChild(this.redoBtn);
     const reload = el("button", "icx-btn", "\u91CD\u65B0\u52A0\u8F7D\u8F93\u5165");
     reload.onclick = () => this.reload();
     head.appendChild(reload);
@@ -591,23 +608,28 @@ var Editor = class {
     if (this.closed) return;
     const target = event.target;
     if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
-    if (event.key === "Escape") {
+    const swallow = (action) => {
       event.preventDefault();
-      this.close(true);
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      action();
+    };
+    if (event.key === "Escape") {
+      swallow(() => this.close(true));
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
-      event.preventDefault();
-      if (event.shiftKey) this.redo();
-      else this.undo();
+      swallow(() => event.shiftKey ? this.redo() : this.undo());
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
-      event.preventDefault();
-      this.redo();
+      swallow(() => this.redo());
       return;
     }
     if (event.code === "Space") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       this.spaceDown = true;
       return;
     }
@@ -620,6 +642,8 @@ var Editor = class {
     };
     if (nudge[event.key] && this.selection.size) {
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       const [dx, dy] = nudge[event.key];
       for (const layer of this.selected()) {
         layer.x += dx;
@@ -902,7 +926,12 @@ var Editor = class {
     this.history = [this.history[0]];
     this.historyIndex = 0;
   }
+  updateHistoryButtons() {
+    if (this.undoBtn) this.undoBtn.disabled = this.historyIndex <= 0;
+    if (this.redoBtn) this.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+  }
   refreshUI() {
+    this.updateHistoryButtons();
     this.renderList();
     this.renderProps();
     if (this.hintEl) {
