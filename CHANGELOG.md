@@ -1,6 +1,11 @@
 # 更新记录
 
-当前版本：**1.2.9**（2026-11-17）
+当前版本：**1.2.10**（2026-11-17）
+
+**1.2.10**（2026-11-17）
+
+- 新增案例：专家级 SVG 生成 Agent 系统提示词（example/cases/svg-generator-agent.md + svg-generator-system-prompt.txt），含硬约束、绘制流程、12 项质检与失败处理
+- Text2SVG 增加第三个输出 system_prompt：直接吐出随包提示词，可接到模型节点的 system_prompt（文件缺失时返回空串，不影响主功能）
 
 **1.2.9**（2026-11-17）
 

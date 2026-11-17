@@ -5,6 +5,7 @@
 """
 
 import logging
+import os
 from io import BytesIO
 
 from comfy_api.latest import io
@@ -18,6 +19,19 @@ NODE_ID = "DeepSeekAPI_Text2SVG"
 PROMPT_HINT = (
     "例如：" + "请只输出一个 SVG，放在 " + FENCE + "svg 代码块里，不要输出别的解释"
 )
+
+PROMPT_FILE = os.path.join("example", "cases", "svg-generator-system-prompt.txt")
+
+
+def recommended_system_prompt():
+    """随包附带的 SVG 生成 agent 系统提示词；找不到就返回空串。"""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), PROMPT_FILE)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read().strip()
+    except OSError:  # pragma: no cover - 打包漏文件时不影响主功能
+        LOG.warning("没找到内置 SVG 提示词：%s", path)
+        return ""
 
 
 def _svg_value(markup):
@@ -76,6 +90,10 @@ class DeepSeekText2SVGNode(io.ComfyNode):
                     display_name="svg_text",
                     tooltip="提取出来的 SVG 源码，便于复制或排查",
                 ),
+                io.String.Output(
+                    display_name="system_prompt",
+                    tooltip="随包附带的专家级 SVG 生成提示词，可直接接到模型节点的 system_prompt",
+                ),
             ],
         )
 
@@ -97,9 +115,10 @@ class DeepSeekText2SVGNode(io.ComfyNode):
         ui = {"images": [entry]} if entry else {"text": [markup]}
 
         value = _svg_value(markup)
+        prompt = recommended_system_prompt()
         LOG.info("Text2SVG：%d 字节，预览=%s", len(markup), bool(entry))
 
         try:
-            return io.NodeOutput(value, markup, ui=ui)
+            return io.NodeOutput(value, markup, prompt, ui=ui)
         except TypeError:  # pragma: no cover - 老版本 io.NodeOutput 不支持 ui
-            return io.NodeOutput(value, markup)
+            return io.NodeOutput(value, markup, prompt)

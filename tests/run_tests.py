@@ -1154,7 +1154,11 @@ def test_text2svg_schema():
     assert [item["id"] for item in schema.inputs] == ["text", "preview"]
     assert schema.inputs[0]["multiline"] is True
     assert schema.inputs[1]["default"] is True
-    assert [item["display_name"] for item in schema.outputs] == ["svg", "svg_text"]
+    assert [item["display_name"] for item in schema.outputs] == [
+        "svg",
+        "svg_text",
+        "system_prompt",
+    ]
     assert schema.outputs[0]["type"] == "SVG"
 
 
@@ -1185,6 +1189,10 @@ def test_text2svg_execute_preview():
     }
     assert seen["prefix"] == "text2svg"
     assert b"<svg" in seen["bytes"]
+
+    prompt = result.results[2]
+    assert len(prompt) > 1000
+    assert "viewBox" in prompt and "输出契约" in prompt
 
 
 @test

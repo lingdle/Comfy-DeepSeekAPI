@@ -31,7 +31,7 @@ from .nodes_balance import DeepSeekBalanceNode
 from .nodes_search import DeepSeekSearchNode
 from .nodes_svg import DeepSeekText2SVGNode
 
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 
 
 class DeepSeekExtension(ComfyExtension):
