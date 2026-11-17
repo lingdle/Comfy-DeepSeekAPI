@@ -29,14 +29,20 @@ export function viewURL(entry: ExecLayer): string {
 }
 
 /** 依次尝试候选地址，全失败再打日志（apiURL 在某些版本会带 /api 前缀，导致 404）。 */
-export function applyToImage(img: HTMLImageElement, entry: ExecLayer) {
-  const urls = viewURLs(entry);
+export function applyToImage(
+  img: HTMLImageElement,
+  entry: ExecLayer,
+  onFailed?: (urls: string[]) => void,
+) {
+  const urls = viewURLs(entry).map((url) => url + "&rand=" + Date.now());
   let index = 0;
   img.onerror = () => {
     index += 1;
     if (index >= urls.length) {
       console.warn("[ICX] 图片加载失败", entry, urls);
       img.onerror = null;
+      img.removeAttribute("src");
+      onFailed?.(urls);
       return;
     }
     img.src = urls[index];

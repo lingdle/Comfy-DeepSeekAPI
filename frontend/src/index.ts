@@ -218,7 +218,15 @@ function setupNode(node: any) {
     }
     if (payload?.preview) {
       preview.style.display = "block";
-      applyToImage(preview, payload.preview as ExecLayer);
+      preview.style.cursor = "pointer";
+      preview.title = "点击重新加载预览";
+      preview.onclick = () => applyToImage(preview, payload.preview as ExecLayer);
+      applyToImage(preview, payload.preview as ExecLayer, (failed) => {
+        status.textContent = "预览图加载失败（" + failed.join(" | ") + "），点图重试";
+        console.warn("[ICX] 预览地址都失败了", failed);
+      });
+    } else if (payload?.errors?.length) {
+      status.textContent = "预览生成失败：" + payload.errors[0];
     }
     return result;
   };

@@ -28,14 +28,16 @@ function viewURL(entry) {
   const urls = viewURLs(entry);
   return urls[urls.length - 1];
 }
-function applyToImage(img, entry) {
-  const urls = viewURLs(entry);
+function applyToImage(img, entry, onFailed) {
+  const urls = viewURLs(entry).map((url) => url + "&rand=" + Date.now());
   let index = 0;
   img.onerror = () => {
     index += 1;
     if (index >= urls.length) {
       console.warn("[ICX] \u56FE\u7247\u52A0\u8F7D\u5931\u8D25", entry, urls);
       img.onerror = null;
+      img.removeAttribute("src");
+      onFailed?.(urls);
       return;
     }
     img.src = urls[index];
@@ -1511,7 +1513,15 @@ function setupNode(node) {
     }
     if (payload?.preview) {
       preview.style.display = "block";
-      applyToImage(preview, payload.preview);
+      preview.style.cursor = "pointer";
+      preview.title = "\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\u9884\u89C8";
+      preview.onclick = () => applyToImage(preview, payload.preview);
+      applyToImage(preview, payload.preview, (failed2) => {
+        status.textContent = "\u9884\u89C8\u56FE\u52A0\u8F7D\u5931\u8D25\uFF08" + failed2.join(" | ") + "\uFF09\uFF0C\u70B9\u56FE\u91CD\u8BD5";
+        console.warn("[ICX] \u9884\u89C8\u5730\u5740\u90FD\u5931\u8D25\u4E86", failed2);
+      });
+    } else if (payload?.errors?.length) {
+      status.textContent = "\u9884\u89C8\u751F\u6210\u5931\u8D25\uFF1A" + payload.errors[0];
     }
     return result;
   };

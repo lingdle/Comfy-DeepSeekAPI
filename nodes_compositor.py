@@ -227,15 +227,18 @@ class ImageCompositorHelperNode(io.ComfyNode):
         }
         if preview:
             ui["preview"] = preview
+            # 同时走标准 images 通道：ComfyUI 自己会渲染，不依赖我们的 <img>
+            ui["images"] = [preview]
         if errors:
             ui["errors"] = errors
 
         LOG.info(
-            "图层合成：%d 层，画布 %dx%d，存档=%s",
+            "图层合成：%d 层，画布 %dx%d，存档=%s，预览=%s",
             len(prepared),
             canvas[0],
             canvas[1],
             "回退默认" if stale else "命中",
+            preview.get("filename") if preview else "无",
         )
 
         image_out = rgb.unsqueeze(0)
