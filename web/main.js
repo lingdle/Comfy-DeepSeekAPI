@@ -1382,9 +1382,6 @@ function runNow(node) {
 function buildContainer(node) {
   const container = document.createElement("div");
   container.style.cssText = "display:flex;flex-direction:column;gap:6px;padding:6px;box-sizing:border-box;width:100%;";
-  const preview = document.createElement("img");
-  preview.style.cssText = "width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#17171b;display:none;";
-  container.appendChild(preview);
   const row = document.createElement("div");
   row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;";
   const button = document.createElement("button");
@@ -1401,7 +1398,7 @@ function buildContainer(node) {
   row.appendChild(runButton);
   row.appendChild(status);
   container.appendChild(row);
-  return { container, preview, button, runButton, status };
+  return { container, button, runButton, status };
 }
 async function loadLayers(node) {
   const payload = node._icx?.payload ?? null;
@@ -1468,8 +1465,8 @@ async function openEditor(node) {
 }
 function setupNode(node) {
   if (node._icx) return;
-  const { container, preview, button, runButton, status } = buildContainer(node);
-  node._icx = { payload: null, editor: null, container, preview, button, runButton, status };
+  const { container, button, runButton, status } = buildContainer(node);
+  node._icx = { payload: null, editor: null, container, button, runButton, status };
   node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
   hideWidget(findWidget(node, WIDGET_NAME));
   button.onclick = () => {
@@ -1511,16 +1508,7 @@ function setupNode(node) {
     } else {
       status.textContent = "\u5DF2\u8F7D\u5165 " + count + " \u5C42 \xB7 \u753B\u5E03 " + (payload?.canvas ?? []).join("\xD7");
     }
-    if (payload?.preview) {
-      preview.style.display = "block";
-      preview.style.cursor = "pointer";
-      preview.title = "\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\u9884\u89C8";
-      preview.onclick = () => applyToImage(preview, payload.preview);
-      applyToImage(preview, payload.preview, (failed2) => {
-        status.textContent = "\u9884\u89C8\u56FE\u52A0\u8F7D\u5931\u8D25\uFF08" + failed2.join(" | ") + "\uFF09\uFF0C\u70B9\u56FE\u91CD\u8BD5";
-        console.warn("[ICX] \u9884\u89C8\u5730\u5740\u90FD\u5931\u8D25\u4E86", failed2);
-      });
-    } else if (payload?.errors?.length) {
+    if (!payload?.images?.length && payload?.errors?.length) {
       status.textContent = "\u9884\u89C8\u751F\u6210\u5931\u8D25\uFF1A" + payload.errors[0];
     }
     return result;

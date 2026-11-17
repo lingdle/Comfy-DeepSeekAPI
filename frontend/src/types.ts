@@ -53,6 +53,7 @@ export interface ExecPayload {
   stale?: boolean[];
   layout?: any;
   errors?: string[];
+  images?: ExecLayer[];
 }
 
 export type HandleId =

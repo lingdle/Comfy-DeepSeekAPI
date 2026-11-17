@@ -226,8 +226,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
             "layout": effective,
         }
         if preview:
-            ui["preview"] = preview
-            # 同时走标准 images 通道：ComfyUI 自己会渲染，不依赖我们的 <img>
+            # 走标准 images 通道：ComfyUI 自己渲染缩略图，前端不再自己拼 /view 地址
             ui["images"] = [preview]
         if errors:
             ui["errors"] = errors

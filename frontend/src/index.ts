@@ -1,6 +1,6 @@
 // @ts-ignore - ComfyUI 运行时提供 /scripts/app.js
 import { app } from "../../scripts/app.js";
-import { applyToImage, findWidget, getWidgetValue, hideWidget, parseJSON, setWidgetValue, viewURL } from "./api";
+import { findWidget, getWidgetValue, hideWidget, parseJSON, setWidgetValue, viewURL } from "./api";
 import { Editor, layerFromPayload } from "./editor";
 import type { EditorInput } from "./editor";
 import type { ExecLayer, ExecPayload, Layer } from "./types";
@@ -51,11 +51,6 @@ function buildContainer(node: any) {
   container.style.cssText =
     "display:flex;flex-direction:column;gap:6px;padding:6px;box-sizing:border-box;width:100%;";
 
-  const preview = document.createElement("img");
-  preview.style.cssText =
-    "width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#17171b;display:none;";
-  container.appendChild(preview);
-
   const row = document.createElement("div");
   row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;";
   const button = document.createElement("button");
@@ -77,7 +72,7 @@ function buildContainer(node: any) {
   row.appendChild(status);
   container.appendChild(row);
 
-  return { container, preview, button, runButton, status };
+  return { container, button, runButton, status };
 }
 
 async function loadLayers(node: any): Promise<EditorInput | null> {
@@ -159,8 +154,8 @@ async function openEditor(node: any) {
 
 function setupNode(node: any) {
   if (node._icx) return;
-  const { container, preview, button, runButton, status } = buildContainer(node);
-  node._icx = { payload: null, editor: null, container, preview, button, runButton, status };
+  const { container, button, runButton, status } = buildContainer(node);
+  node._icx = { payload: null, editor: null, container, button, runButton, status };
   // 注意：widget type 不能叫 "compositor" —— 那是内置 CompositorWidget 的保留类型，
   // 撞名会让 ComfyUI 用一个空的官方预览器顶掉我们的 DOM widget。
   node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
@@ -216,16 +211,7 @@ function setupNode(node: any) {
     } else {
       status.textContent = "已载入 " + count + " 层 · 画布 " + (payload?.canvas ?? []).join("×");
     }
-    if (payload?.preview) {
-      preview.style.display = "block";
-      preview.style.cursor = "pointer";
-      preview.title = "点击重新加载预览";
-      preview.onclick = () => applyToImage(preview, payload.preview as ExecLayer);
-      applyToImage(preview, payload.preview as ExecLayer, (failed) => {
-        status.textContent = "预览图加载失败（" + failed.join(" | ") + "），点图重试";
-        console.warn("[ICX] 预览地址都失败了", failed);
-      });
-    } else if (payload?.errors?.length) {
+    if (!payload?.images?.length && payload?.errors?.length) {
       status.textContent = "预览生成失败：" + payload.errors[0];
     }
     return result;
