@@ -17,7 +17,7 @@
 | assets/ | 图标、横幅、赞助码 |
 | tests/run_tests.py | 单元测试（桩件模拟 ComfyUI，不联网） |
 | tools/ | 开发工具：审计、示例校验、打包、API 兜底推送 |
-| docs/ | 本文件 |
+| docs/ | 本文件 + 各任务书（如 rgba-compositor-task.md / -plan.md，均不进发布包） |
 
 发布到 Registry 的 zip 会排除 tests/、tools/、docs/、.github/、dist/、.ruff_cache/、AGENTS.md（见 .comfyignore / tools/build_zip.py）。
 
