@@ -1,6 +1,16 @@
 import { loadImage, viewURL } from "./api";
 import { render } from "./canvas";
-import { boundingBox, hitHandle, hitLayer, intersects, resizeLayer, snapBox, toCanvas } from "./geometry";
+import {
+  boundingBox,
+  cursorForHandle,
+  hitHandle,
+  hitLayer,
+  intersects,
+  resizeLayer,
+  snapBox,
+  snapResize,
+  toCanvas,
+} from "./geometry";
 import type { CanvasSize, DragMode, ExecLayer, Guide, HandleId, Layer, Snapshot, View } from "./types";
 
 export interface EditorInput {
@@ -48,8 +58,12 @@ function injectStyle() {
   .icx-btn.primary { background: #2b6ee8; border-color: #2b6ee8; color: #fff; }
   .icx-btn.primary:hover { background: #3a7df5; }
   .icx-layers { border-right: 1px solid #2c2c36; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
-  .icx-row { display: grid; grid-template-columns: 46px 1fr auto; gap: 8px; align-items: center; padding: 6px; border-radius: 8px;
-    border: 1px solid transparent; cursor: pointer; }
+  .icx-row { display: grid; grid-template-columns: 18px 46px 1fr; gap: 8px; align-items: center; padding: 6px; border-radius: 8px;
+    border: 1px solid transparent; cursor: grab; user-select: none; }
+  .icx-row.dragging { opacity: .55; cursor: grabbing; }
+  .icx-row.drop-before { border-top-color: #2b6ee8; }
+  .icx-row.drop-after { border-bottom-color: #2b6ee8; }
+  .icx-grip { color: #6b7688; font-size: 12px; letter-spacing: -2px; cursor: grab; }
   .icx-row:hover { background: #24242c; }
   .icx-row.sel { border-color: #2b6ee8; background: #1f2a3d; }
   .icx-thumb { width: 46px; height: 36px; border-radius: 5px; background: #17171c; object-fit: contain; }
@@ -89,6 +103,7 @@ export class Editor {
   private view: View = { scale: 1, tx: 0, ty: 0 };
   private guides: Guide[] = [];
   private drag: DragMode = { kind: "none" };
+  private reorder: { id: string; startY: number; active: boolean } | null = null;
   private spaceDown = false;
   private history: Snapshot[] = [];
   private historyIndex = -1;
@@ -250,6 +265,7 @@ export class Editor {
 
     if (this.spaceDown || event.button === 1) {
       this.drag = { kind: "pan", tx: this.view.tx, ty: this.view.ty, px: event.clientX, py: event.clientY };
+      this.canvasEl.style.cursor = "grabbing";
       return;
     }
     if (event.button !== 0) return;
@@ -264,6 +280,7 @@ export class Editor {
           startAngle: (Math.atan2(point.y - center.y, point.x - center.x) * 180) / Math.PI,
           origin: new Map(this.selected().map((layer) => [layer.id, layer.rotation])),
         };
+        this.canvasEl.style.cursor = cursorForHandle("rotate", 0);
         return;
       }
       if (handle) {
@@ -272,6 +289,7 @@ export class Editor {
           handle,
           origin: new Map(this.selected().map((layer) => [layer.id, { ...layer }])),
         };
+        this.canvasEl.style.cursor = cursorForHandle(handle, primary.rotation);
         return;
       }
     }
@@ -292,6 +310,7 @@ export class Editor {
         startY: point.y,
         origin: new Map(this.selected().map((layer) => [layer.id, { x: layer.x, y: layer.y }])),
       };
+      this.canvasEl.style.cursor = "move";
       this.refreshUI();
       this.requestRender();
       return;
@@ -303,8 +322,32 @@ export class Editor {
     this.requestRender();
   }
 
+  private updateCursor(event: PointerEvent) {
+    const point = this.pointer(event);
+    let cursor = "default";
+    if (this.spaceDown) {
+      cursor = "grab";
+    } else {
+      const primary = this.selected()[0];
+      if (primary) {
+        const handle = hitHandle(primary, point.x, point.y, this.view.scale);
+        if (handle) cursor = cursorForHandle(handle, primary.rotation);
+      }
+      if (cursor === "default") {
+        const ordered = [...this.layers].sort((a, b) => b.z - a.z);
+        const hit = ordered.find((layer) => layer.visible && hitLayer(layer, point.x, point.y));
+        if (hit) cursor = "move";
+      }
+    }
+    if (this.canvasEl.style.cursor !== cursor) this.canvasEl.style.cursor = cursor;
+  }
+
   private onPointerMove(event: PointerEvent) {
-    if (this.closed || this.drag.kind === "none") return;
+    if (this.closed) return;
+    if (this.drag.kind === "none") {
+      this.updateCursor(event);
+      return;
+    }
     const point = this.pointer(event);
 
     if (this.drag.kind === "pan") {
@@ -341,6 +384,19 @@ export class Editor {
         if (!origin) continue;
         const lockAspect = event.shiftKey ? !origin.keep_aspect : origin.keep_aspect;
         Object.assign(layer, resizeLayer(origin, this.drag.handle, point.x, point.y, lockAspect));
+      }
+      // 单层缩放时吸附到画布/其他图层的边线（旋转过的图层不吸附，避免手感错乱）
+      if (this.selection.size === 1) {
+        const layer = this.selected()[0];
+        const others = this.layers.filter((item) => !this.selection.has(item.id));
+        const snapped = snapResize(layer, this.drag.handle, others, this.canvas, this.view.scale);
+        layer.x = snapped.x;
+        layer.y = snapped.y;
+        layer.w = snapped.w;
+        layer.h = snapped.h;
+        this.guides = snapped.guides;
+      } else {
+        this.guides = [];
       }
       this.syncInputs();
       this.requestRender();
@@ -387,6 +443,7 @@ export class Editor {
     }
     this.drag = { kind: "none" };
     this.guides = [];
+    this.canvasEl.style.cursor = "";
     this.requestRender();
   }
 
@@ -526,8 +583,21 @@ export class Editor {
     const ordered = [...this.layers].sort((a, b) => b.z - a.z);
     for (const layer of ordered) {
       const row = el("div", "icx-row" + (this.selection.has(layer.id) ? " sel" : ""));
+      row.dataset.layerId = layer.id;
+
+      const grip = el("span", "icx-grip", "⣿");
+      grip.title = "拖拽调整层级";
+      row.appendChild(grip);
+
       const thumb = el("img", "icx-thumb");
       if (layer.thumb) thumb.src = layer.thumb;
+      thumb.title = layer.visible ? "点击切换显隐" : "已隐藏，点击显示";
+      thumb.style.opacity = layer.visible ? "1" : "0.35";
+      thumb.onclick = (event) => {
+        event.stopPropagation();
+        layer.visible = !layer.visible;
+        this.commit();
+      };
       row.appendChild(thumb);
 
       const meta = el("div");
@@ -535,33 +605,7 @@ export class Editor {
       meta.appendChild(el("div", "icx-row-sub", Math.round(layer.w) + "×" + Math.round(layer.h) + " · " + Math.round(layer.opacity * 100) + "%"));
       row.appendChild(meta);
 
-      const tools = el("div", "icx-row-tools");
-      const eye = el("button", "icx-mini", layer.visible ? "👁" : "—");
-      eye.title = layer.visible ? "隐藏" : "显示";
-      eye.onclick = (event) => {
-        event.stopPropagation();
-        layer.visible = !layer.visible;
-        this.commit();
-      };
-      tools.appendChild(eye);
-
-      const up = el("button", "icx-mini", "↑");
-      up.title = "上移一层";
-      up.onclick = (event) => {
-        event.stopPropagation();
-        this.reorder(layer, 1);
-      };
-      tools.appendChild(up);
-
-      const down = el("button", "icx-mini", "↓");
-      down.title = "下移一层";
-      down.onclick = (event) => {
-        event.stopPropagation();
-        this.reorder(layer, -1);
-      };
-      tools.appendChild(down);
-      row.appendChild(tools);
-
+      row.onpointerdown = (event) => this.beginReorder(event, layer);
       row.onclick = (event) => {
         if (event.shiftKey) {
           if (this.selection.has(layer.id)) this.selection.delete(layer.id);
@@ -578,15 +622,80 @@ export class Editor {
     if (!ordered.length) this.listEl.appendChild(el("div", "icx-empty", "没有图层"));
   }
 
-  private reorder(layer: Layer, direction: number) {
+  private beginReorder(event: PointerEvent, layer: Layer) {
+    if (event.button !== 0) return;
+    this.reorder = { id: layer.id, startY: event.clientY, active: false };
+
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!this.reorder) return;
+      if (!this.reorder.active && Math.abs(moveEvent.clientY - this.reorder.startY) < 4) return;
+      this.reorder.active = true;
+      document.body.style.cursor = "grabbing";
+      const dragged = this.listEl.querySelector<HTMLElement>(
+        '.icx-row[data-layer-id="' + this.reorder.id + '"]',
+      );
+      dragged?.classList.add("dragging");
+      this.markDropTarget(moveEvent.clientY);
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = "";
+      const wasActive = this.reorder?.active ?? false;
+      this.reorder = null;
+      this.clearDropMarks();
+      if (!wasActive) return;
+      const row = this.rowAt(upEvent.clientY);
+      if (row !== null) this.moveLayerToRow(layer.id, row);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  private rows(): HTMLElement[] {
+    return Array.from(this.listEl.querySelectorAll<HTMLElement>(".icx-row"));
+  }
+
+  private rowAt(y: number): number | null {
+    const rows = this.rows();
+    if (!rows.length) return null;
+    for (let index = 0; index < rows.length; index += 1) {
+      const rect = rows[index].getBoundingClientRect();
+      if (y < rect.top + rect.height / 2) return index;
+    }
+    return rows.length;
+  }
+
+  private markDropTarget(y: number) {
+    this.clearDropMarks();
+    const rows = this.rows();
+    const target = this.rowAt(y);
+    if (target === null || !rows.length) return;
+    const row = rows[Math.min(target, rows.length - 1)];
+    row.classList.add(target >= rows.length ? "drop-after" : "drop-before");
+  }
+
+  private clearDropMarks() {
+    for (const row of this.rows()) row.classList.remove("drop-before", "drop-after", "dragging");
+  }
+
+  /** 列表是自顶向下（z 大在上），拖到第 row 个位置 = 放到对应 z。 */
+  private moveLayerToRow(layerId: string, row: number) {
     const ordered = [...this.layers].sort((a, b) => a.z - b.z);
-    const index = ordered.findIndex((item) => item.id === layer.id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= ordered.length) return;
-    const swap = ordered[target];
-    const z = layer.z;
-    layer.z = swap.z;
-    swap.z = z;
+    const count = ordered.length;
+    if (count < 2) return;
+    const from = ordered.findIndex((item) => item.id === layerId);
+    if (from < 0) return;
+
+    let targetZ = count - 1 - row;
+    targetZ = Math.max(0, Math.min(count - 1, targetZ));
+    if (targetZ === from) return;
+
+    const [moved] = ordered.splice(from, 1);
+    ordered.splice(targetZ, 0, moved);
+    ordered.forEach((item, index) => {
+      item.z = index;
+    });
     this.commit();
   }
 

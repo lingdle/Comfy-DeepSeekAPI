@@ -1,6 +1,48 @@
 import type { Guide, HandleId, Layer, View } from "./types";
 
 export const HANDLE_TOLERANCE = 7;
+
+const RESIZE_CURSORS: Record<string, string> = {
+  n: "ns-resize",
+  s: "ns-resize",
+  e: "ew-resize",
+  w: "ew-resize",
+  nw: "nwse-resize",
+  se: "nwse-resize",
+  ne: "nesw-resize",
+  sw: "nesw-resize",
+};
+
+const ROTATE_CURSOR =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 4a8 8 0 1 1-7.4 5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/><path d='M12 4V1L8 4.5 12 8' fill='white'/></svg>\") 12 12, crosshair";
+
+/** 控制点光标要跟着图层旋转走，否则手感是反的。 */
+export function cursorForHandle(handle: HandleId, rotation: number): string {
+  if (handle === "rotate") return ROTATE_CURSOR;
+  const baseCursor = RESIZE_CURSORS[handle] ?? "default";
+  const angles: Record<string, number> = {
+    e: 0,
+    se: 45,
+    s: 90,
+    sw: 135,
+    w: 180,
+    nw: 225,
+    n: 270,
+    ne: 315,
+  };
+  const angle = (angles[handle] ?? 0) + rotation;
+  const bucket = ((Math.round(angle / 45) % 8) + 8) % 8;
+  return [
+    "ew-resize",
+    "nwse-resize",
+    "ns-resize",
+    "nesw-resize",
+    "ew-resize",
+    "nwse-resize",
+    "ns-resize",
+    "nesw-resize",
+  ][bucket];
+}
 const SNAP_PIXELS = 6;
 
 export function toScreen(view: View, x: number, y: number) {
@@ -142,6 +184,70 @@ export function snapBox(
   if (bestX.line === bestX.line) guides.push({ axis: "x", value: bestX.line });
   if (bestY.line === bestY.line) guides.push({ axis: "y", value: bestY.line });
   return { dx: bestX.delta, dy: bestY.delta, guides };
+}
+
+/** 缩放时的吸附：只处理未旋转的图层，锚定对角边不动。 */
+export function snapResize(
+  layer: Layer,
+  handle: HandleId,
+  targets: Layer[],
+  canvas: { width: number; height: number },
+  viewScale: number,
+): { x: number; y: number; w: number; h: number; guides: Guide[] } {
+  const result = { x: layer.x, y: layer.y, w: layer.w, h: layer.h };
+  if (Math.abs(layer.rotation % 360) > 0.5) return { ...result, guides: [] };
+
+  const threshold = SNAP_PIXELS / viewScale;
+  const xLines: number[] = [0, canvas.width / 2, canvas.width];
+  const yLines: number[] = [0, canvas.height / 2, canvas.height];
+  for (const target of targets) {
+    const bb = boundingBox([target]);
+    xLines.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
+    yLines.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
+  }
+
+  const guides: Guide[] = [];
+  const snapAxis = (
+    edge: number,
+    lines: number[],
+    apply: (delta: number, line: number) => void,
+  ) => {
+    let best = { delta: 0, distance: threshold, line: NaN };
+    for (const line of lines) {
+      const distance = Math.abs(line - edge);
+      if (distance < best.distance) best = { delta: line - edge, distance, line };
+    }
+    if (best.line === best.line) {
+      apply(best.delta, best.line);
+      guides.push({ axis: lines === xLines ? "x" : "y", value: best.line });
+    }
+  };
+
+  if (handle.includes("w")) {
+    const edge = result.x;
+    snapAxis(edge, xLines, (delta) => {
+      result.x += delta;
+      result.w = Math.max(8, result.w - delta);
+    });
+  } else if (handle.includes("e")) {
+    const edge = result.x + result.w;
+    snapAxis(edge, xLines, (delta) => {
+      result.w = Math.max(8, result.w + delta);
+    });
+  }
+  if (handle.includes("n")) {
+    const edge = result.y;
+    snapAxis(edge, yLines, (delta) => {
+      result.y += delta;
+      result.h = Math.max(8, result.h - delta);
+    });
+  } else if (handle.includes("s")) {
+    const edge = result.y + result.h;
+    snapAxis(edge, yLines, (delta) => {
+      result.h = Math.max(8, result.h + delta);
+    });
+  }
+  return { ...result, guides };
 }
 
 /** 拖控制点：对角为锚点，keep_aspect 时按比例缩放。 */
