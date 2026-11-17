@@ -1,4 +1,4 @@
-import { loadImage, viewURL } from "./api";
+import { applyToImage, loadImage, viewURL } from "./api";
 import { render } from "./canvas";
 import {
   boundingBox,
@@ -637,7 +637,8 @@ export class Editor {
       row.appendChild(grip);
 
       const thumb = el("img", "icx-thumb");
-      if (layer.thumb) thumb.src = layer.thumb;
+      if (layer.source) applyToImage(thumb, layer.source);
+      else if (layer.thumb) thumb.src = layer.thumb;
       thumb.title = layer.visible ? "点击切换显隐" : "已隐藏，点击显示";
       thumb.style.opacity = layer.visible ? "1" : "0.35";
       thumb.onclick = (event) => {
@@ -1022,6 +1023,7 @@ export function layerFromPayload(entry: ExecLayer, saved: any, index: number): P
     naturalW: naturalWidth,
     naturalH: naturalHeight,
     img: image,
-    thumb: (entry as any).thumb,
+    thumb: viewURL(entry),
+    source: { filename: entry.filename, subfolder: entry.subfolder, type: entry.type },
   }));
 }

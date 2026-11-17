@@ -17,6 +17,7 @@ export interface Layer {
   naturalH: number;
   img?: HTMLImageElement;
   thumb?: string;
+  source?: { filename: string; subfolder?: string; type?: string };
 }
 
 export interface CanvasSize {

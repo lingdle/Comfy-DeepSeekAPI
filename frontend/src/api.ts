@@ -2,16 +2,49 @@
 import { api } from "../../scripts/api.js";
 import type { ExecLayer } from "./types";
 
-export function viewURL(entry: ExecLayer): string {
+export function viewURLs(entry: ExecLayer): string[] {
   const params = new URLSearchParams({
     filename: entry.filename,
     subfolder: entry.subfolder ?? "",
     type: entry.type ?? "temp",
   });
-  const path = "/view?" + params.toString();
+  const plain = "/view?" + params.toString();
+  const urls: string[] = [];
   const anyApi = api as any;
-  if (anyApi && typeof anyApi.apiURL === "function") return anyApi.apiURL(path);
-  return path;
+  if (anyApi && typeof anyApi.apiURL === "function") {
+    try {
+      const resolved = anyApi.apiURL(plain);
+      if (typeof resolved === "string" && resolved && resolved !== plain) urls.push(resolved);
+    } catch (_error) {
+      /* 走兜底 */
+    }
+  }
+  urls.push(plain);
+  return urls;
+}
+
+export function viewURL(entry: ExecLayer): string {
+  const urls = viewURLs(entry);
+  return urls[urls.length - 1];
+}
+
+/** 依次尝试候选地址，全失败再打日志（apiURL 在某些版本会带 /api 前缀，导致 404）。 */
+export function applyToImage(img: HTMLImageElement, entry: ExecLayer) {
+  const urls = viewURLs(entry);
+  let index = 0;
+  img.onerror = () => {
+    index += 1;
+    if (index >= urls.length) {
+      console.warn("[ICX] 图片加载失败", entry, urls);
+      img.onerror = null;
+      return;
+    }
+    img.src = urls[index];
+  };
+  img.onload = () => {
+    img.onerror = null;
+  };
+  img.src = urls[0];
 }
 
 export function loadImage(src: string): Promise<HTMLImageElement> {

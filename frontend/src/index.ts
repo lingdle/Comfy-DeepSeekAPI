@@ -1,6 +1,6 @@
 // @ts-ignore - ComfyUI 运行时提供 /scripts/app.js
 import { app } from "../../scripts/app.js";
-import { findWidget, getWidgetValue, hideWidget, parseJSON, setWidgetValue, viewURL } from "./api";
+import { applyToImage, findWidget, getWidgetValue, hideWidget, parseJSON, setWidgetValue, viewURL } from "./api";
 import { Editor, layerFromPayload } from "./editor";
 import type { EditorInput } from "./editor";
 import type { ExecLayer, ExecPayload, Layer } from "./types";
@@ -8,25 +8,42 @@ import type { ExecLayer, ExecPayload, Layer } from "./types";
 const NODE_TYPE = "ImageCompositorHelper";
 const WIDGET_NAME = "layout_json";
 
-/** 让 ComfyUI 立刻跑一次（保存布局后自动合成）。 */
-function runNow(node: any): boolean {
+/**
+ * 只运行本节点：新前端支持 partial execution，
+ * 第三参传 { queueNodeIds: [id] }（旧签名也可以直接传 id 数组）。
+ */
+function runNow(node: any): "partial" | "full" | "none" {
   const anyApp: any = app;
-  try {
-    if (typeof anyApp?.queuePrompt === "function") {
-      anyApp.queuePrompt(0, 1);
+  const id = String(node?.id ?? "");
+  if (!id) return "none";
+
+  const attempt = (invoke: () => any): boolean => {
+    try {
+      const result = invoke();
+      if (result && typeof result.then === "function") {
+        result.catch((error: any) => console.warn("[ICX] 排队失败", error));
+      }
       return true;
+    } catch (error) {
+      console.warn("[ICX] 排队调用失败", error);
+      return false;
     }
-  } catch (error) {
-    console.warn("[ICX] queuePrompt 调用失败", error);
+  };
+
+  if (typeof anyApp?.queuePrompt === "function") {
+    if (attempt(() => anyApp.queuePrompt(0, 1, { queueNodeIds: [id] }))) return "partial";
+    if (attempt(() => anyApp.queuePrompt(0, 1, [id]))) return "partial";
+    if (attempt(() => anyApp.queuePrompt(0, 1))) return "full";
   }
+
   const button = document.querySelector<HTMLButtonElement>(
     "#queue-button, [data-testid='queue-button'], .queue-button",
   );
   if (button) {
     button.click();
-    return true;
+    return "full";
   }
-  return false;
+  return "none";
 }
 
 function buildContainer(node: any) {
@@ -40,7 +57,7 @@ function buildContainer(node: any) {
   container.appendChild(preview);
 
   const row = document.createElement("div");
-  row.style.cssText = "display:flex;gap:8px;align-items:center;";
+  row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;";
   const button = document.createElement("button");
   button.textContent = "打开合成器";
   button.style.cssText =
@@ -49,11 +66,18 @@ function buildContainer(node: any) {
   const status = document.createElement("span");
   status.textContent = "先运行一次以载入图层";
   status.style.cssText = "font-size:11px;color:#8d97ab;";
+  const runButton = document.createElement("button");
+  runButton.textContent = "▶ 运行本节点";
+  runButton.title = "只执行这个节点（不跑整张图）";
+  runButton.style.cssText =
+    "height:28px;padding:0 10px;border-radius:6px;border:1px solid #3a3a46;background:#24242c;" +
+    "color:#dfe6f3;font-size:12px;cursor:pointer;";
   row.appendChild(button);
+  row.appendChild(runButton);
   row.appendChild(status);
   container.appendChild(row);
 
-  return { container, preview, button, status };
+  return { container, preview, button, runButton, status };
 }
 
 async function loadLayers(node: any): Promise<EditorInput | null> {
@@ -114,9 +138,12 @@ async function openEditor(node: any) {
         return;
       }
       const queued = runNow(node);
-      node._icx.status.textContent = queued
-        ? "布局已保存，正在运行…"
-        : "布局已保存：请点 Run 运行";
+      node._icx.status.textContent =
+        queued === "partial"
+          ? "布局已保存，正在运行本节点…"
+          : queued === "full"
+            ? "布局已保存，已排队整图（前端不支持单节点运行）…"
+            : "布局已保存：请点 Run 运行";
     },
     reload: async () => {
       const fresh = await loadLayers(node);
@@ -132,8 +159,8 @@ async function openEditor(node: any) {
 
 function setupNode(node: any) {
   if (node._icx) return;
-  const { container, preview, button, status } = buildContainer(node);
-  node._icx = { payload: null, editor: null, container, preview, button, status };
+  const { container, preview, button, runButton, status } = buildContainer(node);
+  node._icx = { payload: null, editor: null, container, preview, button, runButton, status };
   // 注意：widget type 不能叫 "compositor" —— 那是内置 CompositorWidget 的保留类型，
   // 撞名会让 ComfyUI 用一个空的官方预览器顶掉我们的 DOM widget。
   node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
@@ -145,6 +172,16 @@ function setupNode(node: any) {
       status.textContent = "打开失败：" + (error?.message ?? error);
       console.error("[ImageCompositorHelper]", error);
     });
+  };
+
+  runButton.onclick = () => {
+    const queued = runNow(node);
+    status.textContent =
+      queued === "partial"
+        ? "正在运行本节点…"
+        : queued === "full"
+          ? "前端不支持单节点运行，已排队整图…"
+          : "找不到运行入口：请手动点 Queue";
   };
 
   const originalMenu = node.getExtraMenuOptions;
@@ -180,8 +217,8 @@ function setupNode(node: any) {
       status.textContent = "已载入 " + count + " 层 · 画布 " + (payload?.canvas ?? []).join("×");
     }
     if (payload?.preview) {
-      preview.src = viewURL(payload.preview as ExecLayer);
       preview.style.display = "block";
+      applyToImage(preview, payload.preview as ExecLayer);
     }
     return result;
   };

@@ -5,16 +5,45 @@ import { app } from "../../scripts/app.js";
 
 // src/api.ts
 import { api } from "../../scripts/api.js";
-function viewURL(entry) {
+function viewURLs(entry) {
   const params = new URLSearchParams({
     filename: entry.filename,
     subfolder: entry.subfolder ?? "",
     type: entry.type ?? "temp"
   });
-  const path = "/view?" + params.toString();
+  const plain = "/view?" + params.toString();
+  const urls = [];
   const anyApi = api;
-  if (anyApi && typeof anyApi.apiURL === "function") return anyApi.apiURL(path);
-  return path;
+  if (anyApi && typeof anyApi.apiURL === "function") {
+    try {
+      const resolved = anyApi.apiURL(plain);
+      if (typeof resolved === "string" && resolved && resolved !== plain) urls.push(resolved);
+    } catch (_error) {
+    }
+  }
+  urls.push(plain);
+  return urls;
+}
+function viewURL(entry) {
+  const urls = viewURLs(entry);
+  return urls[urls.length - 1];
+}
+function applyToImage(img, entry) {
+  const urls = viewURLs(entry);
+  let index = 0;
+  img.onerror = () => {
+    index += 1;
+    if (index >= urls.length) {
+      console.warn("[ICX] \u56FE\u7247\u52A0\u8F7D\u5931\u8D25", entry, urls);
+      img.onerror = null;
+      return;
+    }
+    img.src = urls[index];
+  };
+  img.onload = () => {
+    img.onerror = null;
+  };
+  img.src = urls[0];
 }
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -955,7 +984,8 @@ var Editor = class {
       grip.title = "\u62D6\u62FD\u8C03\u6574\u5C42\u7EA7";
       row.appendChild(grip);
       const thumb = el("img", "icx-thumb");
-      if (layer.thumb) thumb.src = layer.thumb;
+      if (layer.source) applyToImage(thumb, layer.source);
+      else if (layer.thumb) thumb.src = layer.thumb;
       thumb.title = layer.visible ? "\u70B9\u51FB\u5207\u6362\u663E\u9690" : "\u5DF2\u9690\u85CF\uFF0C\u70B9\u51FB\u663E\u793A";
       thumb.style.opacity = layer.visible ? "1" : "0.35";
       thumb.onclick = (event) => {
@@ -1309,7 +1339,8 @@ function layerFromPayload(entry, saved, index) {
     naturalW: naturalWidth,
     naturalH: naturalHeight,
     img: image,
-    thumb: entry.thumb
+    thumb: viewURL(entry),
+    source: { filename: entry.filename, subfolder: entry.subfolder, type: entry.type }
   }));
 }
 
@@ -1318,22 +1349,33 @@ var NODE_TYPE = "ImageCompositorHelper";
 var WIDGET_NAME = "layout_json";
 function runNow(node) {
   const anyApp = app;
-  try {
-    if (typeof anyApp?.queuePrompt === "function") {
-      anyApp.queuePrompt(0, 1);
+  const id = String(node?.id ?? "");
+  if (!id) return "none";
+  const attempt = (invoke) => {
+    try {
+      const result = invoke();
+      if (result && typeof result.then === "function") {
+        result.catch((error) => console.warn("[ICX] \u6392\u961F\u5931\u8D25", error));
+      }
       return true;
+    } catch (error) {
+      console.warn("[ICX] \u6392\u961F\u8C03\u7528\u5931\u8D25", error);
+      return false;
     }
-  } catch (error) {
-    console.warn("[ICX] queuePrompt \u8C03\u7528\u5931\u8D25", error);
+  };
+  if (typeof anyApp?.queuePrompt === "function") {
+    if (attempt(() => anyApp.queuePrompt(0, 1, { queueNodeIds: [id] }))) return "partial";
+    if (attempt(() => anyApp.queuePrompt(0, 1, [id]))) return "partial";
+    if (attempt(() => anyApp.queuePrompt(0, 1))) return "full";
   }
   const button = document.querySelector(
     "#queue-button, [data-testid='queue-button'], .queue-button"
   );
   if (button) {
     button.click();
-    return true;
+    return "full";
   }
-  return false;
+  return "none";
 }
 function buildContainer(node) {
   const container = document.createElement("div");
@@ -1342,17 +1384,22 @@ function buildContainer(node) {
   preview.style.cssText = "width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#17171b;display:none;";
   container.appendChild(preview);
   const row = document.createElement("div");
-  row.style.cssText = "display:flex;gap:8px;align-items:center;";
+  row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;";
   const button = document.createElement("button");
   button.textContent = "\u6253\u5F00\u5408\u6210\u5668";
   button.style.cssText = "height:28px;padding:0 12px;border-radius:6px;border:1px solid #3a3a46;background:#2b6ee8;color:#fff;font-size:12px;cursor:pointer;";
   const status = document.createElement("span");
   status.textContent = "\u5148\u8FD0\u884C\u4E00\u6B21\u4EE5\u8F7D\u5165\u56FE\u5C42";
   status.style.cssText = "font-size:11px;color:#8d97ab;";
+  const runButton = document.createElement("button");
+  runButton.textContent = "\u25B6 \u8FD0\u884C\u672C\u8282\u70B9";
+  runButton.title = "\u53EA\u6267\u884C\u8FD9\u4E2A\u8282\u70B9\uFF08\u4E0D\u8DD1\u6574\u5F20\u56FE\uFF09";
+  runButton.style.cssText = "height:28px;padding:0 10px;border-radius:6px;border:1px solid #3a3a46;background:#24242c;color:#dfe6f3;font-size:12px;cursor:pointer;";
   row.appendChild(button);
+  row.appendChild(runButton);
   row.appendChild(status);
   container.appendChild(row);
-  return { container, preview, button, status };
+  return { container, preview, button, runButton, status };
 }
 async function loadLayers(node) {
   const payload = node._icx?.payload ?? null;
@@ -1404,7 +1451,7 @@ async function openEditor(node) {
         return;
       }
       const queued = runNow(node);
-      node._icx.status.textContent = queued ? "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF0C\u6B63\u5728\u8FD0\u884C\u2026" : "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF1A\u8BF7\u70B9 Run \u8FD0\u884C";
+      node._icx.status.textContent = queued === "partial" ? "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF0C\u6B63\u5728\u8FD0\u884C\u672C\u8282\u70B9\u2026" : queued === "full" ? "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF0C\u5DF2\u6392\u961F\u6574\u56FE\uFF08\u524D\u7AEF\u4E0D\u652F\u6301\u5355\u8282\u70B9\u8FD0\u884C\uFF09\u2026" : "\u5E03\u5C40\u5DF2\u4FDD\u5B58\uFF1A\u8BF7\u70B9 Run \u8FD0\u884C";
     },
     reload: async () => {
       const fresh = await loadLayers(node);
@@ -1419,8 +1466,8 @@ async function openEditor(node) {
 }
 function setupNode(node) {
   if (node._icx) return;
-  const { container, preview, button, status } = buildContainer(node);
-  node._icx = { payload: null, editor: null, container, preview, button, status };
+  const { container, preview, button, runButton, status } = buildContainer(node);
+  node._icx = { payload: null, editor: null, container, preview, button, runButton, status };
   node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
   hideWidget(findWidget(node, WIDGET_NAME));
   button.onclick = () => {
@@ -1428,6 +1475,10 @@ function setupNode(node) {
       status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);
       console.error("[ImageCompositorHelper]", error);
     });
+  };
+  runButton.onclick = () => {
+    const queued = runNow(node);
+    status.textContent = queued === "partial" ? "\u6B63\u5728\u8FD0\u884C\u672C\u8282\u70B9\u2026" : queued === "full" ? "\u524D\u7AEF\u4E0D\u652F\u6301\u5355\u8282\u70B9\u8FD0\u884C\uFF0C\u5DF2\u6392\u961F\u6574\u56FE\u2026" : "\u627E\u4E0D\u5230\u8FD0\u884C\u5165\u53E3\uFF1A\u8BF7\u624B\u52A8\u70B9 Queue";
   };
   const originalMenu = node.getExtraMenuOptions;
   node.getExtraMenuOptions = function(canvas, options) {
@@ -1459,8 +1510,8 @@ function setupNode(node) {
       status.textContent = "\u5DF2\u8F7D\u5165 " + count + " \u5C42 \xB7 \u753B\u5E03 " + (payload?.canvas ?? []).join("\xD7");
     }
     if (payload?.preview) {
-      preview.src = viewURL(payload.preview);
       preview.style.display = "block";
+      applyToImage(preview, payload.preview);
     }
     return result;
   };
