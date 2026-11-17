@@ -7,10 +7,12 @@ import {
   hitLayer,
   intersects,
   resizeLayer,
+  emptySnapState,
   snapBox,
   snapResize,
   toCanvas,
 } from "./geometry";
+import type { SnapState } from "./geometry";
 import type { CanvasSize, DragMode, ExecLayer, Guide, HandleId, Layer, Snapshot, View } from "./types";
 
 export interface EditorInput {
@@ -106,6 +108,7 @@ export class Editor {
   private view: View = { scale: 1, tx: 0, ty: 0 };
   private guides: Guide[] = [];
   private drag: DragMode = { kind: "none" };
+  private snap: SnapState = emptySnapState();
   private reorder: { id: string; startY: number; active: boolean } | null = null;
   private spaceDown = false;
   private history: Snapshot[] = [];
@@ -400,10 +403,11 @@ export class Editor {
       const moving = this.selected();
       const box = boundingBox(moving.map((layer) => ({ ...layer, x: layer.x + dx, y: layer.y + dy })));
       const others = this.layers.filter((layer) => !this.selection.has(layer.id));
-      const snap = snapBox(box, others, this.canvas, this.view.scale);
+      const snap = snapBox(box, others, this.canvas, this.view.scale, this.snap);
       dx += snap.dx;
       dy += snap.dy;
       this.guides = snap.guides;
+      this.snap = snap.state;
       for (const layer of moving) {
         const origin = this.drag.origin.get(layer.id);
         if (!origin) continue;
@@ -426,12 +430,20 @@ export class Editor {
       if (this.selection.size === 1) {
         const layer = this.selected()[0];
         const others = this.layers.filter((item) => !this.selection.has(item.id));
-        const snapped = snapResize(layer, this.drag.handle, others, this.canvas, this.view.scale);
+        const snapped = snapResize(
+          layer,
+          this.drag.handle,
+          others,
+          this.canvas,
+          this.view.scale,
+          this.snap,
+        );
         layer.x = snapped.x;
         layer.y = snapped.y;
         layer.w = snapped.w;
         layer.h = snapped.h;
         this.guides = snapped.guides;
+        this.snap = snapped.state;
       } else {
         this.guides = [];
       }
@@ -480,6 +492,7 @@ export class Editor {
     }
     this.drag = { kind: "none" };
     this.guides = [];
+    this.snap = emptySnapState();
     this.canvasEl.style.cursor = "";
     this.requestRender();
   }

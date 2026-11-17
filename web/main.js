@@ -122,7 +122,8 @@ function cursorForHandle(handle, rotation) {
     "nesw-resize"
   ][bucket];
 }
-var SNAP_PIXELS = 6;
+var SNAP_ENTER_PX = 5;
+var SNAP_EXIT_PX = 12;
 function toScreen(view, x, y) {
   return { x: x * view.scale + view.tx, y: y * view.scale + view.ty };
 }
@@ -208,84 +209,97 @@ function boundingBox(layers) {
 function intersects(a, b) {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
-function snapBox(box, targets, canvas, viewScale) {
-  const threshold = SNAP_PIXELS / viewScale;
-  const xLines = [0, canvas.width / 2, canvas.width];
-  const yLines = [0, canvas.height / 2, canvas.height];
-  for (const layer of targets) {
-    const bb = boundingBox([layer]);
-    xLines.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
-    yLines.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
-  }
-  const candidatesX = [box.x, box.x + box.w / 2, box.x + box.w];
-  const candidatesY = [box.y, box.y + box.h / 2, box.y + box.h];
-  let bestX = { delta: 0, distance: threshold, line: NaN };
-  for (const candidate of candidatesX) {
-    for (const line of xLines) {
-      const distance = Math.abs(line - candidate);
-      if (distance < bestX.distance) bestX = { delta: line - candidate, distance, line };
-    }
-  }
-  let bestY = { delta: 0, distance: threshold, line: NaN };
-  for (const candidate of candidatesY) {
-    for (const line of yLines) {
-      const distance = Math.abs(line - candidate);
-      if (distance < bestY.distance) bestY = { delta: line - candidate, distance, line };
-    }
-  }
-  const guides = [];
-  if (bestX.line === bestX.line) guides.push({ axis: "x", value: bestX.line });
-  if (bestY.line === bestY.line) guides.push({ axis: "y", value: bestY.line });
-  return { dx: bestX.delta, dy: bestY.delta, guides };
+function emptySnapState() {
+  return { x: null, y: null };
 }
-function snapResize(layer, handle, targets, canvas, viewScale) {
-  const result = { x: layer.x, y: layer.y, w: layer.w, h: layer.h };
-  if (Math.abs(layer.rotation % 360) > 0.5) return { ...result, guides: [] };
-  const threshold = SNAP_PIXELS / viewScale;
-  const xLines = [0, canvas.width / 2, canvas.width];
-  const yLines = [0, canvas.height / 2, canvas.height];
+function snapLineSets(targets, canvas) {
+  const xs = [0, canvas.width / 2, canvas.width];
+  const ys = [0, canvas.height / 2, canvas.height];
   for (const target of targets) {
     const bb = boundingBox([target]);
-    xLines.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
-    yLines.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
+    xs.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
+    ys.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
   }
-  const guides = [];
-  const snapAxis = (edge, lines, apply) => {
-    let best = { delta: 0, distance: threshold, line: NaN };
+  const dedupe = (values) => {
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const value of values) {
+      const key = Math.round(value * 100) / 100;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(key);
+    }
+    return out;
+  };
+  return { xs: dedupe(xs), ys: dedupe(ys) };
+}
+function pickAxis(edges, lines, locked, viewScale) {
+  if (locked !== null) {
+    let best2 = { delta: 0, distance: Infinity };
+    for (const edge of edges) {
+      const delta = locked - edge;
+      const distance = Math.abs(delta);
+      if (distance < best2.distance) best2 = { delta, distance };
+    }
+    if (best2.distance * viewScale <= SNAP_EXIT_PX) {
+      return { delta: Math.round(best2.delta), line: locked };
+    }
+  }
+  let best = { delta: 0, distance: Infinity, line: null };
+  for (const edge of edges) {
     for (const line of lines) {
       const distance = Math.abs(line - edge);
       if (distance < best.distance) best = { delta: line - edge, distance, line };
     }
-    if (best.line === best.line) {
-      apply(best.delta, best.line);
-      guides.push({ axis: lines === xLines ? "x" : "y", value: best.line });
-    }
-  };
+  }
+  if (best.line !== null && best.distance * viewScale <= SNAP_ENTER_PX) {
+    return { delta: Math.round(best.delta), line: best.line };
+  }
+  return { delta: 0, line: null };
+}
+function snapBox(box, targets, canvas, viewScale, state = { x: null, y: null }) {
+  const { xs, ys } = snapLineSets(targets, canvas);
+  const x = pickAxis([box.x, box.x + box.w / 2, box.x + box.w], xs, state.x, viewScale);
+  const y = pickAxis([box.y, box.y + box.h / 2, box.y + box.h], ys, state.y, viewScale);
+  const guides = [];
+  if (x.line !== null) guides.push({ axis: "x", value: x.line });
+  if (y.line !== null) guides.push({ axis: "y", value: y.line });
+  return { dx: x.delta, dy: y.delta, guides, state: { x: x.line, y: y.line } };
+}
+function snapResize(layer, handle, targets, canvas, viewScale, state = { x: null, y: null }) {
+  const result = { x: layer.x, y: layer.y, w: layer.w, h: layer.h };
+  const reset = { x: null, y: null };
+  if (Math.abs(layer.rotation % 360) > 0.5) {
+    return { ...result, guides: [], state: reset };
+  }
+  const { xs, ys } = snapLineSets(targets, canvas);
+  const guides = [];
+  const nextState = { x: null, y: null };
   if (handle.includes("w")) {
-    const edge = result.x;
-    snapAxis(edge, xLines, (delta) => {
-      result.x += delta;
-      result.w = Math.max(8, result.w - delta);
-    });
+    const pick = pickAxis([result.x], xs, state.x, viewScale);
+    result.x += pick.delta;
+    result.w = Math.max(8, result.w - pick.delta);
+    nextState.x = pick.line;
+    if (pick.line !== null) guides.push({ axis: "x", value: pick.line });
   } else if (handle.includes("e")) {
-    const edge = result.x + result.w;
-    snapAxis(edge, xLines, (delta) => {
-      result.w = Math.max(8, result.w + delta);
-    });
+    const pick = pickAxis([result.x + result.w], xs, state.x, viewScale);
+    result.w = Math.max(8, result.w + pick.delta);
+    nextState.x = pick.line;
+    if (pick.line !== null) guides.push({ axis: "x", value: pick.line });
   }
   if (handle.includes("n")) {
-    const edge = result.y;
-    snapAxis(edge, yLines, (delta) => {
-      result.y += delta;
-      result.h = Math.max(8, result.h - delta);
-    });
+    const pick = pickAxis([result.y], ys, state.y, viewScale);
+    result.y += pick.delta;
+    result.h = Math.max(8, result.h - pick.delta);
+    nextState.y = pick.line;
+    if (pick.line !== null) guides.push({ axis: "y", value: pick.line });
   } else if (handle.includes("s")) {
-    const edge = result.y + result.h;
-    snapAxis(edge, yLines, (delta) => {
-      result.h = Math.max(8, result.h + delta);
-    });
+    const pick = pickAxis([result.y + result.h], ys, state.y, viewScale);
+    result.h = Math.max(8, result.h + pick.delta);
+    nextState.y = pick.line;
+    if (pick.line !== null) guides.push({ axis: "y", value: pick.line });
   }
-  return { ...result, guides };
+  return { ...result, guides, state: nextState };
 }
 function resizeLayer(origin, handle, pointerX, pointerY, lockAspect) {
   const radians = origin.rotation * Math.PI / 180;
@@ -513,6 +527,7 @@ var Editor = class {
     this.view = { scale: 1, tx: 0, ty: 0 };
     this.guides = [];
     this.drag = { kind: "none" };
+    this.snap = emptySnapState();
     this.reorder = null;
     this.spaceDown = false;
     this.history = [];
@@ -792,10 +807,11 @@ var Editor = class {
       const moving = this.selected();
       const box = boundingBox(moving.map((layer) => ({ ...layer, x: layer.x + dx, y: layer.y + dy })));
       const others = this.layers.filter((layer) => !this.selection.has(layer.id));
-      const snap = snapBox(box, others, this.canvas, this.view.scale);
+      const snap = snapBox(box, others, this.canvas, this.view.scale, this.snap);
       dx += snap.dx;
       dy += snap.dy;
       this.guides = snap.guides;
+      this.snap = snap.state;
       for (const layer of moving) {
         const origin = this.drag.origin.get(layer.id);
         if (!origin) continue;
@@ -816,12 +832,20 @@ var Editor = class {
       if (this.selection.size === 1) {
         const layer = this.selected()[0];
         const others = this.layers.filter((item) => !this.selection.has(item.id));
-        const snapped = snapResize(layer, this.drag.handle, others, this.canvas, this.view.scale);
+        const snapped = snapResize(
+          layer,
+          this.drag.handle,
+          others,
+          this.canvas,
+          this.view.scale,
+          this.snap
+        );
         layer.x = snapped.x;
         layer.y = snapped.y;
         layer.w = snapped.w;
         layer.h = snapped.h;
         this.guides = snapped.guides;
+        this.snap = snapped.state;
       } else {
         this.guides = [];
       }
@@ -867,6 +891,7 @@ var Editor = class {
     }
     this.drag = { kind: "none" };
     this.guides = [];
+    this.snap = emptySnapState();
     this.canvasEl.style.cursor = "";
     this.requestRender();
   }

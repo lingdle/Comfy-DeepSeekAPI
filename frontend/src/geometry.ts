@@ -43,7 +43,9 @@ export function cursorForHandle(handle: HandleId, rotation: number): string {
     "nesw-resize",
   ][bucket];
 }
-const SNAP_PIXELS = 6;
+// 吸附带迟滞：进入阈值 5 屏幕像素，已吸住后放宽到 12 像素才脱开，避免指针微动就来回跳
+export const SNAP_ENTER_PX = 5;
+export const SNAP_EXIT_PX = 12;
 
 export function toScreen(view: View, x: number, y: number) {
   return { x: x * view.scale + view.tx, y: y * view.scale + view.ty };
@@ -140,10 +142,74 @@ export function intersects(a: { x: number; y: number; w: number; h: number }, b:
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
+export interface SnapState {
+  x: number | null;
+  y: number | null;
+}
+
 export interface SnapResult {
   dx: number;
   dy: number;
   guides: Guide[];
+  state: SnapState;
+}
+
+export function emptySnapState(): SnapState {
+  return { x: null, y: null };
+}
+
+function snapLineSets(targets: Layer[], canvas: { width: number; height: number }) {
+  const xs = [0, canvas.width / 2, canvas.width];
+  const ys = [0, canvas.height / 2, canvas.height];
+  for (const target of targets) {
+    const bb = boundingBox([target]);
+    xs.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
+    ys.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
+  }
+  const dedupe = (values: number[]) => {
+    const seen = new Set<number>();
+    const out: number[] = [];
+    for (const value of values) {
+      const key = Math.round(value * 100) / 100;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(key);
+    }
+    return out;
+  };
+  return { xs: dedupe(xs), ys: dedupe(ys) };
+}
+
+/** 单轴吸附：优先维持已锁定的线（迟滞），否则按 5px 进入阈值挑最近的一条。 */
+function pickAxis(
+  edges: number[],
+  lines: number[],
+  locked: number | null,
+  viewScale: number,
+): { delta: number; line: number | null } {
+  if (locked !== null) {
+    let best = { delta: 0, distance: Infinity };
+    for (const edge of edges) {
+      const delta = locked - edge;
+      const distance = Math.abs(delta);
+      if (distance < best.distance) best = { delta, distance };
+    }
+    if (best.distance * viewScale <= SNAP_EXIT_PX) {
+      return { delta: Math.round(best.delta), line: locked };
+    }
+  }
+
+  let best = { delta: 0, distance: Infinity, line: null as number | null };
+  for (const edge of edges) {
+    for (const line of lines) {
+      const distance = Math.abs(line - edge);
+      if (distance < best.distance) best = { delta: line - edge, distance, line };
+    }
+  }
+  if (best.line !== null && best.distance * viewScale <= SNAP_ENTER_PX) {
+    return { delta: Math.round(best.delta), line: best.line };
+  }
+  return { delta: 0, line: null };
 }
 
 /** 把移动中的包围盒吸附到画布与其他图层的中线/边线。 */
@@ -152,105 +218,67 @@ export function snapBox(
   targets: Layer[],
   canvas: { width: number; height: number },
   viewScale: number,
+  state: SnapState = { x: null, y: null },
 ): SnapResult {
-  const threshold = SNAP_PIXELS / viewScale;
-  const xLines: number[] = [0, canvas.width / 2, canvas.width];
-  const yLines: number[] = [0, canvas.height / 2, canvas.height];
-  for (const layer of targets) {
-    const bb = boundingBox([layer]);
-    xLines.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
-    yLines.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
-  }
-
-  const candidatesX = [box.x, box.x + box.w / 2, box.x + box.w];
-  const candidatesY = [box.y, box.y + box.h / 2, box.y + box.h];
-
-  let bestX = { delta: 0, distance: threshold, line: NaN };
-  for (const candidate of candidatesX) {
-    for (const line of xLines) {
-      const distance = Math.abs(line - candidate);
-      if (distance < bestX.distance) bestX = { delta: line - candidate, distance, line };
-    }
-  }
-  let bestY = { delta: 0, distance: threshold, line: NaN };
-  for (const candidate of candidatesY) {
-    for (const line of yLines) {
-      const distance = Math.abs(line - candidate);
-      if (distance < bestY.distance) bestY = { delta: line - candidate, distance, line };
-    }
-  }
+  const { xs, ys } = snapLineSets(targets, canvas);
+  const x = pickAxis([box.x, box.x + box.w / 2, box.x + box.w], xs, state.x, viewScale);
+  const y = pickAxis([box.y, box.y + box.h / 2, box.y + box.h], ys, state.y, viewScale);
 
   const guides: Guide[] = [];
-  if (bestX.line === bestX.line) guides.push({ axis: "x", value: bestX.line });
-  if (bestY.line === bestY.line) guides.push({ axis: "y", value: bestY.line });
-  return { dx: bestX.delta, dy: bestY.delta, guides };
+  if (x.line !== null) guides.push({ axis: "x", value: x.line });
+  if (y.line !== null) guides.push({ axis: "y", value: y.line });
+
+  return { dx: x.delta, dy: y.delta, guides, state: { x: x.line, y: y.line } };
 }
 
-/** 缩放时的吸附：只处理未旋转的图层，锚定对角边不动。 */
+/** 缩放时的吸附：只处理未旋转的图层，锚定对角边不动；同样带迟滞。 */
 export function snapResize(
   layer: Layer,
   handle: HandleId,
   targets: Layer[],
   canvas: { width: number; height: number },
   viewScale: number,
-): { x: number; y: number; w: number; h: number; guides: Guide[] } {
+  state: SnapState = { x: null, y: null },
+): { x: number; y: number; w: number; h: number; guides: Guide[]; state: SnapState } {
   const result = { x: layer.x, y: layer.y, w: layer.w, h: layer.h };
-  if (Math.abs(layer.rotation % 360) > 0.5) return { ...result, guides: [] };
-
-  const threshold = SNAP_PIXELS / viewScale;
-  const xLines: number[] = [0, canvas.width / 2, canvas.width];
-  const yLines: number[] = [0, canvas.height / 2, canvas.height];
-  for (const target of targets) {
-    const bb = boundingBox([target]);
-    xLines.push(bb.x, bb.x + bb.w / 2, bb.x + bb.w);
-    yLines.push(bb.y, bb.y + bb.h / 2, bb.y + bb.h);
+  const reset: SnapState = { x: null, y: null };
+  if (Math.abs(layer.rotation % 360) > 0.5) {
+    return { ...result, guides: [], state: reset };
   }
 
+  const { xs, ys } = snapLineSets(targets, canvas);
   const guides: Guide[] = [];
-  const snapAxis = (
-    edge: number,
-    lines: number[],
-    apply: (delta: number, line: number) => void,
-  ) => {
-    let best = { delta: 0, distance: threshold, line: NaN };
-    for (const line of lines) {
-      const distance = Math.abs(line - edge);
-      if (distance < best.distance) best = { delta: line - edge, distance, line };
-    }
-    if (best.line === best.line) {
-      apply(best.delta, best.line);
-      guides.push({ axis: lines === xLines ? "x" : "y", value: best.line });
-    }
-  };
+  const nextState: SnapState = { x: null, y: null };
 
   if (handle.includes("w")) {
-    const edge = result.x;
-    snapAxis(edge, xLines, (delta) => {
-      result.x += delta;
-      result.w = Math.max(8, result.w - delta);
-    });
+    const pick = pickAxis([result.x], xs, state.x, viewScale);
+    result.x += pick.delta;
+    result.w = Math.max(8, result.w - pick.delta);
+    nextState.x = pick.line;
+    if (pick.line !== null) guides.push({ axis: "x", value: pick.line });
   } else if (handle.includes("e")) {
-    const edge = result.x + result.w;
-    snapAxis(edge, xLines, (delta) => {
-      result.w = Math.max(8, result.w + delta);
-    });
+    const pick = pickAxis([result.x + result.w], xs, state.x, viewScale);
+    result.w = Math.max(8, result.w + pick.delta);
+    nextState.x = pick.line;
+    if (pick.line !== null) guides.push({ axis: "x", value: pick.line });
   }
+
   if (handle.includes("n")) {
-    const edge = result.y;
-    snapAxis(edge, yLines, (delta) => {
-      result.y += delta;
-      result.h = Math.max(8, result.h - delta);
-    });
+    const pick = pickAxis([result.y], ys, state.y, viewScale);
+    result.y += pick.delta;
+    result.h = Math.max(8, result.h - pick.delta);
+    nextState.y = pick.line;
+    if (pick.line !== null) guides.push({ axis: "y", value: pick.line });
   } else if (handle.includes("s")) {
-    const edge = result.y + result.h;
-    snapAxis(edge, yLines, (delta) => {
-      result.h = Math.max(8, result.h + delta);
-    });
+    const pick = pickAxis([result.y + result.h], ys, state.y, viewScale);
+    result.h = Math.max(8, result.h + pick.delta);
+    nextState.y = pick.line;
+    if (pick.line !== null) guides.push({ axis: "y", value: pick.line });
   }
-  return { ...result, guides };
+
+  return { ...result, guides, state: nextState };
 }
 
-/** 拖控制点：对角为锚点，keep_aspect 时按比例缩放。 */
 export function resizeLayer(
   origin: Layer,
   handle: HandleId,
