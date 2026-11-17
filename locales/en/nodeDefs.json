@@ -210,12 +210,12 @@
         "name": "images",
         "tooltip": "Stacked bottom-to-top as image_0 ... image_7; gaps are allowed. 4 channels = alpha, 3 channels = opaque"
       },
-      "canvas_width": {
-        "name": "canvas_width",
+      "width": {
+        "name": "width",
         "tooltip": "Canvas width; 0 = use the saved canvas, else the first image size"
       },
-      "canvas_height": {
-        "name": "canvas_height",
+      "height": {
+        "name": "height",
         "tooltip": "Canvas height; 0 = use the saved canvas, else the first image size"
       },
       "layout_json": {

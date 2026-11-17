@@ -210,12 +210,12 @@
         "name": "images",
         "tooltip": "按 image_0 → image_7 的顺序从底到顶叠放；可有空位。4 通道当 alpha，3 通道按不透明"
       },
-      "canvas_width": {
-        "name": "canvas_width",
+      "width": {
+        "name": "width",
         "tooltip": "画布宽度；0 = 用存档里的画布，再没有就用第一张图的尺寸"
       },
-      "canvas_height": {
-        "name": "canvas_height",
+      "height": {
+        "name": "height",
         "tooltip": "画布高度；0 = 用存档里的画布，再没有就用第一张图的尺寸"
       },
       "layout_json": {

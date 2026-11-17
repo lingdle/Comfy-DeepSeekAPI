@@ -1300,8 +1300,8 @@ def test_compositor_schema():
     assert schema.is_output_node is True
     assert [item["id"] for item in schema.inputs] == [
         "images",
-        "canvas_width",
-        "canvas_height",
+        "width",
+        "height",
         "layout_json",
     ]
     slots = schema.inputs[0]

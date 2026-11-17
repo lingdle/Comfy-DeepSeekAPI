@@ -99,7 +99,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
                     ),
                 ),
                 io.Int.Input(
-                    "canvas_width",
+                    "width",
                     default=0,
                     min=0,
                     max=8192,
@@ -108,7 +108,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
                     advanced=True,
                 ),
                 io.Int.Input(
-                    "canvas_height",
+                    "height",
                     default=0,
                     min=0,
                     max=8192,
@@ -146,8 +146,8 @@ class ImageCompositorHelperNode(io.ComfyNode):
     def execute(
         cls,
         images=None,
-        canvas_width=0,
-        canvas_height=0,
+        width=0,
+        height=0,
         layout_json="",
     ) -> io.NodeOutput:
         tensors = sorted_slots(images)
@@ -170,8 +170,8 @@ class ImageCompositorHelperNode(io.ComfyNode):
         stale = not stored_ok
 
         explicit = (
-            (int(canvas_width), int(canvas_height))
-            if int(canvas_width) > 0 and int(canvas_height) > 0
+            (int(width), int(height))
+            if int(width) > 0 and int(height) > 0
             else None
         )
         canvas = canvas_of(layout if stored_ok else None, explicit or sizes[0])
