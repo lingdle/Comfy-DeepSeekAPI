@@ -1,4 +1,4 @@
-"""图层合成助手（ImageCompositorHelper，V3 schema）。
+"""图层合成助手（LayerCompositor，V3 schema）。
 
 连线：autogrow 接受若干 IMAGE（4 通道把第 4 通道当 alpha），按索引叠成图层；
 前端编辑器在画布上摆位置/大小/旋转/层级，锁定后写回 layout_json；
@@ -33,7 +33,7 @@ from .core.render import (
 
 LOG = logging.getLogger("DeepSeekAPI")
 
-NODE_ID = "ImageCompositorHelper"
+NODE_ID = "LayerCompositor"
 
 PREVIEW_SIDE = 1024  # 编辑器里每层缩略图的长边上限
 COMPOSITE_PREVIEW_LIMIT = 4096  # 合成预览的上限：这个尺寸以内按原尺寸存，原生预览标注才等于画布
@@ -55,7 +55,7 @@ def _save_temp(image, prefix):
     return {"filename": name, "subfolder": "", "type": "temp"}
 
 
-class ImageCompositorHelperNode(io.ComfyNode):
+class LayerCompositorNode(io.ComfyNode):
     """按数组顺序叠图的画布合成器。"""
 
     @classmethod

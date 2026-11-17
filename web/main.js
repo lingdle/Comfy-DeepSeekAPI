@@ -1347,7 +1347,7 @@ function layerFromPayload(entry, saved, index) {
 }
 
 // src/index.ts
-var NODE_TYPE = "ImageCompositorHelper";
+var NODE_TYPE = "LayerCompositor";
 var WIDGET_NAME = "layout_json";
 function runNow(node) {
   const anyApp = app;
@@ -1472,7 +1472,7 @@ function setupNode(node) {
   button.onclick = () => {
     openEditor(node).catch((error) => {
       status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);
-      console.error("[ImageCompositorHelper]", error);
+      console.error("[LayerCompositor]", error);
     });
   };
   runButton.onclick = () => {
@@ -1487,7 +1487,7 @@ function setupNode(node) {
       callback: () => {
         openEditor(node).catch((error) => {
           status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);
-          console.error("[ImageCompositorHelper]", error);
+          console.error("[LayerCompositor]", error);
         });
       }
     });
@@ -1514,7 +1514,7 @@ function setupNode(node) {
   };
 }
 app.registerExtension({
-  name: "DeepSeekAPI.ImageCompositorHelper",
+  name: "DeepSeekAPI.LayerCompositor",
   nodeCreated(node) {
     const type = node?.comfyClass ?? node?.type;
     if (type !== NODE_TYPE) return;
@@ -1522,7 +1522,7 @@ app.registerExtension({
       setupNode(node);
       console.log("[ICX] \u5408\u6210\u5668\u8282\u70B9\u5DF2\u6302\u8F7D", node?.id);
     } catch (error) {
-      console.error("[ImageCompositorHelper] setup failed", error);
+      console.error("[LayerCompositor] setup failed", error);
     }
   }
 });

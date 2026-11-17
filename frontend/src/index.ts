@@ -5,7 +5,7 @@ import { Editor, layerFromPayload } from "./editor";
 import type { EditorInput } from "./editor";
 import type { ExecLayer, ExecPayload, Layer } from "./types";
 
-const NODE_TYPE = "ImageCompositorHelper";
+const NODE_TYPE = "LayerCompositor";
 const WIDGET_NAME = "layout_json";
 
 /**
@@ -165,7 +165,7 @@ function setupNode(node: any) {
   button.onclick = () => {
     openEditor(node).catch((error) => {
       status.textContent = "打开失败：" + (error?.message ?? error);
-      console.error("[ImageCompositorHelper]", error);
+      console.error("[LayerCompositor]", error);
     });
   };
 
@@ -187,7 +187,7 @@ function setupNode(node: any) {
       callback: () => {
         openEditor(node).catch((error: any) => {
           status.textContent = "打开失败：" + (error?.message ?? error);
-          console.error("[ImageCompositorHelper]", error);
+          console.error("[LayerCompositor]", error);
         });
       },
     });
@@ -220,7 +220,7 @@ function setupNode(node: any) {
 }
 
 app.registerExtension({
-  name: "DeepSeekAPI.ImageCompositorHelper",
+  name: "DeepSeekAPI.LayerCompositor",
   nodeCreated(node: any) {
     const type = node?.comfyClass ?? node?.type;
     if (type !== NODE_TYPE) return;
@@ -228,7 +228,7 @@ app.registerExtension({
       setupNode(node);
       console.log("[ICX] 合成器节点已挂载", node?.id);
     } catch (error) {
-      console.error("[ImageCompositorHelper] setup failed", error);
+      console.error("[LayerCompositor] setup failed", error);
     }
   },
 });

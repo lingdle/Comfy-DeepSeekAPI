@@ -202,7 +202,7 @@
       }
     }
   },
-  "ImageCompositorHelper": {
+  "LayerCompositor": {
     "display_name": "Layer Compositor",
     "description": "Stacks transparent images in array order into one composite: click Open Compositor, drag/resize/rotate/reorder layers on the canvas, save and run. A 4-channel input uses channel 4 as alpha, 3 channels are treated as opaque. Outputs a 3-channel IMAGE, a MASK and the layout JSON.",
     "inputs": {

@@ -501,7 +501,7 @@ def test_entrypoint_returns_nodes():
         SEARCH.DeepSeekSearchNode,
         BAL.DeepSeekBalanceNode,
         SVGN.DeepSeekText2SVGNode,
-        COMP.ImageCompositorHelperNode,
+        COMP.LayerCompositorNode,
     ]
 
 
@@ -1241,7 +1241,7 @@ def test_text2svg_without_svg_still_returns_agent_prompt():
     assert "data-empty" in result.results[0].data[0].getvalue().decode("utf-8")
 
 
-# ------------------------------------------------------- ImageCompositorHelper
+# ------------------------------------------------------- LayerCompositor
 @test
 def test_compositor_layout_helpers():
     assert CPCORE.sorted_slots({"image_10": "c", "image_2": None, "image_0": "a"}) == ["a", "c"]
@@ -1294,8 +1294,8 @@ def test_compositor_frame_size_is_width_height():
 
 @test
 def test_compositor_schema():
-    schema = COMP.ImageCompositorHelperNode.define_schema()
-    assert schema.node_id == "ImageCompositorHelper"
+    schema = COMP.LayerCompositorNode.define_schema()
+    assert schema.node_id == "LayerCompositor"
     assert schema.category == "DeepSeekAPI"
     assert schema.is_output_node is True
     assert [item["id"] for item in schema.inputs] == [
@@ -1315,7 +1315,7 @@ def test_compositor_schema():
 
 @test
 def test_compositor_rejects_empty_inputs():
-    message = expect_error(COMP.ImageCompositorHelperNode.execute, images={})
+    message = expect_error(COMP.LayerCompositorNode.execute, images={})
     assert "图层" in message, message
 
 
@@ -1325,7 +1325,7 @@ I18N_STEMS = [
     ("DeepSeekAPI_Search", SEARCH.DeepSeekSearchNode),
     ("DeepSeekAPI_Balance", BAL.DeepSeekBalanceNode),
     ("DeepSeekAPI_Text2SVG", SVGN.DeepSeekText2SVGNode),
-    ("ImageCompositorHelper", COMP.ImageCompositorHelperNode),
+    ("LayerCompositor", COMP.LayerCompositorNode),
 ]
 
 
@@ -1459,7 +1459,7 @@ def test_locale_inputs_follow_schema_order():
         "DeepSeekAPI_Search": SEARCH.DeepSeekSearchNode.define_schema().kwargs,
         "DeepSeekAPI_Balance": BAL.DeepSeekBalanceNode.define_schema().kwargs,
         "DeepSeekAPI_Text2SVG": SVGN.DeepSeekText2SVGNode.define_schema().kwargs,
-        "ImageCompositorHelper": COMP.ImageCompositorHelperNode.define_schema().kwargs,
+        "LayerCompositor": COMP.LayerCompositorNode.define_schema().kwargs,
     }
     for lang in ("zh", "en"):
         data = json.loads((PKG_DIR / "locales" / lang / "nodeDefs.json").read_text(encoding="utf-8"))

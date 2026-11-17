@@ -1,6 +1,12 @@
 # 更新记录
 
-当前版本：**1.5.0**（2026-11-17）
+当前版本：**1.5.1**（2026-11-17）
+
+**1.5.1**（2026-11-17）
+
+- 节点类型改名：`ImageCompositorHelper` → **`LayerCompositor`**（去掉 Compositor + Helper 的双后缀，也和 ComfyUI 内置 ImageCompositor 区分开）
+- 类名 `ImageCompositorHelperNode` → `LayerCompositorNode`，前端 NODE_TYPE / 扩展名 / locales 键 / 测试同步
+- **不兼容**：旧工作流里保存的节点类型名会失效，画布上需要删掉重新拖入（布局 JSON 的字段没变）
 
 **1.5.0**（2026-11-17）
 

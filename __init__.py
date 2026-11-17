@@ -29,10 +29,10 @@ if _comfy_io is None or not hasattr(_comfy_io, "Autogrow"):  # pragma: no cover
 from .nodes import DeepSeekModelNode
 from .nodes_balance import DeepSeekBalanceNode
 from .nodes_search import DeepSeekSearchNode
-from .nodes_compositor import ImageCompositorHelperNode
+from .nodes_compositor import LayerCompositorNode
 from .nodes_svg import DeepSeekText2SVGNode
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 
 class DeepSeekExtension(ComfyExtension):
@@ -42,7 +42,7 @@ class DeepSeekExtension(ComfyExtension):
             DeepSeekSearchNode,
             DeepSeekBalanceNode,
             DeepSeekText2SVGNode,
-            ImageCompositorHelperNode,
+            LayerCompositorNode,
         ]
 
 
