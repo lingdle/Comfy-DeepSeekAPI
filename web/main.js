@@ -619,11 +619,8 @@ var Editor = class {
     const reset = el("button", "icx-btn", "\u6062\u590D");
     reset.onclick = () => this.restore();
     right.appendChild(reset);
-    const close = el("button", "icx-btn", "\u5173\u95ED");
-    close.onclick = () => this.close(false);
-    right.appendChild(close);
-    const save = el("button", "icx-btn primary", "\u9501\u5B9A\u5E76\u4FDD\u5B58\u5E76\u8FD0\u884C");
-    save.title = "\u4FDD\u5B58\u5E03\u5C40\u5E76\u7ACB\u5373\u8FD0\u884C\u672C\u8282\u70B9";
+    const save = el("button", "icx-btn primary", "\u4FDD\u5B58\u5E76\u5173\u95ED");
+    save.title = "\u5199\u5165\u5E03\u5C40\u5E76\u81EA\u52A8\u8FD0\u884C\u672C\u8282\u70B9\uFF08\u8F93\u51FA\u4F1A\u6309\u65B0\u5E03\u5C40\u5408\u6210\uFF09";
     save.onclick = () => this.close(true, true);
     right.appendChild(save);
     foot.appendChild(right);
@@ -652,7 +649,7 @@ var Editor = class {
       action();
     };
     if (event.key === "Escape") {
-      swallow(() => this.close(true));
+      swallow(() => this.close(true, true));
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {

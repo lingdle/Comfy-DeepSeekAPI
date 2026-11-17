@@ -214,12 +214,8 @@ export class Editor {
     reset.onclick = () => this.restore();
     right.appendChild(reset);
 
-    const close = el("button", "icx-btn", "关闭");
-    close.onclick = () => this.close(false);
-    right.appendChild(close);
-
-    const save = el("button", "icx-btn primary", "锁定并保存并运行");
-    save.title = "保存布局并立即运行本节点";
+    const save = el("button", "icx-btn primary", "保存并关闭");
+    save.title = "写入布局并自动运行本节点（输出会按新布局合成）";
     save.onclick = () => this.close(true, true);
     right.appendChild(save);
 
@@ -253,7 +249,7 @@ export class Editor {
     };
 
     if (event.key === "Escape") {
-      swallow(() => this.close(true));
+      swallow(() => this.close(true, true));
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
