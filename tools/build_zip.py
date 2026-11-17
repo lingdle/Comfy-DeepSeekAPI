@@ -16,6 +16,7 @@ EXCLUDE_DIRS = {
     ".git",
     ".ruff_cache",
     ".npm-cache",
+    ".scratch",
     "node_modules",
     "tests",
     "tools",

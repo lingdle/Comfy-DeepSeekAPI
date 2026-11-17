@@ -38,8 +38,9 @@ PREVIEW_SIDE = 1024  # 前端画布用的预览图长边上限（合成仍用全
 
 
 def _frame_size(tensor):
+    """返回 (宽, 高)。ComfyUI 的 IMAGE 是 [B, H, W, C]，别把宽高读反。"""
     frame = tensor[0] if tensor.dim() == 4 else tensor
-    return int(frame.shape[0]), int(frame.shape[1])
+    return int(frame.shape[1]), int(frame.shape[0])
 
 
 def _save_temp(image, prefix):
@@ -154,7 +155,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
         sizes = [_frame_size(tensor) for tensor in tensors]
         digests = [tensor_digest(tensor) for tensor in tensors]
         fp = fingerprint(
-            [(index, height, width, digests[index]) for index, (height, width) in enumerate(sizes)]
+            [(index, height, width, digests[index]) for index, (width, height) in enumerate(sizes)]
         )
 
         layout = parse_layout(layout_json)
@@ -183,14 +184,16 @@ class ImageCompositorHelperNode(io.ComfyNode):
         rgb, alpha = composite(prepared, canvas[0], canvas[1])
 
         layer_entries = []
+        errors = []
         names = []
         for index, tensor in enumerate(tensors):
             names.append("图层 %d" % (index + 1))
-            height, width = sizes[index]
+            width, height = sizes[index]
             try:
                 entry = _save_temp(to_pil(to_rgba(tensor), PREVIEW_SIDE), "rgba_layer_%d" % index)
             except Exception as exc:  # pragma: no cover - 预览失败不影响合成
-                LOG.warning("图层 %d 预览保存失败：%s", index, exc)
+                LOG.exception("图层 %d 预览保存失败：%s", index, exc)
+                errors.append("layer %d: %s" % (index, exc))
                 entry = None
             if entry:
                 entry.update({"index": index, "width": width, "height": height})
@@ -209,7 +212,8 @@ class ImageCompositorHelperNode(io.ComfyNode):
                 "rgba_composite",
             )
         except Exception as exc:  # pragma: no cover - 合成预览失败不影响输出
-            LOG.warning("合成预览保存失败：%s", exc)
+            LOG.exception("合成预览保存失败：%s", exc)
+            errors.append("preview: %s" % exc)
 
         ui = {
             "layers": layer_entries,
@@ -220,6 +224,8 @@ class ImageCompositorHelperNode(io.ComfyNode):
         }
         if preview:
             ui["preview"] = preview
+        if errors:
+            ui["errors"] = errors
 
         LOG.info(
             "图层合成：%d 层，画布 %dx%d，存档=%s",

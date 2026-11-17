@@ -1260,6 +1260,23 @@ def test_compositor_layout_helpers():
 
 
 @test
+def test_compositor_frame_size_is_width_height():
+    class FakeTensor:
+        def __init__(self, shape):
+            self.shape = shape
+
+        def dim(self):
+            return len(self.shape)
+
+        def __getitem__(self, index):
+            return FakeTensor(self.shape[1:])
+
+    # ComfyUI IMAGE = [B, H, W, C] → 必须返回 (宽, 高)
+    assert COMP._frame_size(FakeTensor((1, 480, 640, 3))) == (640, 480)
+    assert COMP._frame_size(FakeTensor((480, 640, 4))) == (640, 480)
+
+
+@test
 def test_compositor_schema():
     schema = COMP.ImageCompositorHelperNode.define_schema()
     assert schema.node_id == "ImageCompositorHelper"

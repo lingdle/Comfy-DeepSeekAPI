@@ -22,7 +22,6 @@ function buildContainer(node: any) {
   row.style.cssText = "display:flex;gap:8px;align-items:center;";
   const button = document.createElement("button");
   button.textContent = "打开合成器";
-  button.disabled = true;
   button.style.cssText =
     "height:28px;padding:0 12px;border-radius:6px;border:1px solid #3a3a46;background:#2b6ee8;" +
     "color:#fff;font-size:12px;cursor:pointer;";
@@ -68,9 +67,21 @@ async function loadLayers(node: any): Promise<EditorInput | null> {
 
 async function openEditor(node: any) {
   if (node._icx?.editor) return;
+  const payload = node._icx?.payload;
+  if (!payload) {
+    node._icx.status.textContent = "还没有执行结果：先点 Run 跑一次";
+    console.warn("[ICX] 没有执行结果，先运行一次工作流");
+    return;
+  }
   const state = await loadLayers(node);
   if (!state) {
-    node._icx.status.textContent = "还没有可用的图层：先运行一次";
+    node._icx.status.textContent = "图层数据为空：检查节点输出或浏览器控制台";
+    console.warn("[ICX] payload 里没有 layers", payload);
+    return;
+  }
+  if (!state.layers.length) {
+    node._icx.status.textContent = "图层预览没生成：看 ComfyUI 控制台日志";
+    console.warn("[ICX] layers 为空，可能是预览图保存失败", payload?.errors);
     return;
   }
 
@@ -111,10 +122,18 @@ function setupNode(node: any) {
     const result = originalExecuted?.apply(this, arguments);
     const payload = output as ExecPayload;
     node._icx.payload = payload;
-    button.disabled = !(payload?.layers && payload.layers.length);
-    status.textContent = payload?.stale?.[0]
-      ? "输入已变化：布局已回退默认，打开可重新摆"
-      : "已载入 " + (payload?.layers?.length ?? 0) + " 层";
+    console.log("[ICX] 执行结果", payload);
+    const count = payload?.layers?.length ?? 0;
+    const failed = payload?.errors?.length ?? 0;
+    if (!count) {
+      status.textContent = failed
+        ? "图层预览保存失败：" + payload.errors![0]
+        : "没有收到图层数据（见控制台）";
+    } else if (payload?.stale?.[0]) {
+      status.textContent = "输入已变化：布局已回退默认，打开可重新摆";
+    } else {
+      status.textContent = "已载入 " + count + " 层 · 画布 " + (payload?.canvas ?? []).join("×");
+    }
     if (payload?.preview) {
       preview.src = viewURL(payload.preview as ExecLayer);
       preview.style.display = "block";
@@ -126,9 +145,11 @@ function setupNode(node: any) {
 app.registerExtension({
   name: "DeepSeekAPI.ImageCompositorHelper",
   nodeCreated(node: any) {
-    if (node?.comfyClass !== NODE_TYPE) return;
+    const type = node?.comfyClass ?? node?.type;
+    if (type !== NODE_TYPE) return;
     try {
       setupNode(node);
+      console.log("[ICX] 合成器节点已挂载", node?.id);
     } catch (error) {
       console.error("[ImageCompositorHelper] setup failed", error);
     }

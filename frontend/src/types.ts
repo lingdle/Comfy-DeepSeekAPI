@@ -51,6 +51,7 @@ export interface ExecPayload {
   fingerprint?: string;
   stale?: boolean[];
   layout?: any;
+  errors?: string[];
 }
 
 export type HandleId =

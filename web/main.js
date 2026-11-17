@@ -1115,7 +1115,6 @@ function buildContainer(node) {
   row.style.cssText = "display:flex;gap:8px;align-items:center;";
   const button = document.createElement("button");
   button.textContent = "\u6253\u5F00\u5408\u6210\u5668";
-  button.disabled = true;
   button.style.cssText = "height:28px;padding:0 12px;border-radius:6px;border:1px solid #3a3a46;background:#2b6ee8;color:#fff;font-size:12px;cursor:pointer;";
   const status = document.createElement("span");
   status.textContent = "\u5148\u8FD0\u884C\u4E00\u6B21\u4EE5\u8F7D\u5165\u56FE\u5C42";
@@ -1150,9 +1149,21 @@ async function loadLayers(node) {
 }
 async function openEditor(node) {
   if (node._icx?.editor) return;
+  const payload = node._icx?.payload;
+  if (!payload) {
+    node._icx.status.textContent = "\u8FD8\u6CA1\u6709\u6267\u884C\u7ED3\u679C\uFF1A\u5148\u70B9 Run \u8DD1\u4E00\u6B21";
+    console.warn("[ICX] \u6CA1\u6709\u6267\u884C\u7ED3\u679C\uFF0C\u5148\u8FD0\u884C\u4E00\u6B21\u5DE5\u4F5C\u6D41");
+    return;
+  }
   const state = await loadLayers(node);
   if (!state) {
-    node._icx.status.textContent = "\u8FD8\u6CA1\u6709\u53EF\u7528\u7684\u56FE\u5C42\uFF1A\u5148\u8FD0\u884C\u4E00\u6B21";
+    node._icx.status.textContent = "\u56FE\u5C42\u6570\u636E\u4E3A\u7A7A\uFF1A\u68C0\u67E5\u8282\u70B9\u8F93\u51FA\u6216\u6D4F\u89C8\u5668\u63A7\u5236\u53F0";
+    console.warn("[ICX] payload \u91CC\u6CA1\u6709 layers", payload);
+    return;
+  }
+  if (!state.layers.length) {
+    node._icx.status.textContent = "\u56FE\u5C42\u9884\u89C8\u6CA1\u751F\u6210\uFF1A\u770B ComfyUI \u63A7\u5236\u53F0\u65E5\u5FD7";
+    console.warn("[ICX] layers \u4E3A\u7A7A\uFF0C\u53EF\u80FD\u662F\u9884\u89C8\u56FE\u4FDD\u5B58\u5931\u8D25", payload?.errors);
     return;
   }
   const editor = new Editor(state, {
@@ -1188,8 +1199,16 @@ function setupNode(node) {
     const result = originalExecuted?.apply(this, arguments);
     const payload = output;
     node._icx.payload = payload;
-    button.disabled = !(payload?.layers && payload.layers.length);
-    status.textContent = payload?.stale?.[0] ? "\u8F93\u5165\u5DF2\u53D8\u5316\uFF1A\u5E03\u5C40\u5DF2\u56DE\u9000\u9ED8\u8BA4\uFF0C\u6253\u5F00\u53EF\u91CD\u65B0\u6446" : "\u5DF2\u8F7D\u5165 " + (payload?.layers?.length ?? 0) + " \u5C42";
+    console.log("[ICX] \u6267\u884C\u7ED3\u679C", payload);
+    const count = payload?.layers?.length ?? 0;
+    const failed = payload?.errors?.length ?? 0;
+    if (!count) {
+      status.textContent = failed ? "\u56FE\u5C42\u9884\u89C8\u4FDD\u5B58\u5931\u8D25\uFF1A" + payload.errors[0] : "\u6CA1\u6709\u6536\u5230\u56FE\u5C42\u6570\u636E\uFF08\u89C1\u63A7\u5236\u53F0\uFF09";
+    } else if (payload?.stale?.[0]) {
+      status.textContent = "\u8F93\u5165\u5DF2\u53D8\u5316\uFF1A\u5E03\u5C40\u5DF2\u56DE\u9000\u9ED8\u8BA4\uFF0C\u6253\u5F00\u53EF\u91CD\u65B0\u6446";
+    } else {
+      status.textContent = "\u5DF2\u8F7D\u5165 " + count + " \u5C42 \xB7 \u753B\u5E03 " + (payload?.canvas ?? []).join("\xD7");
+    }
     if (payload?.preview) {
       preview.src = viewURL(payload.preview);
       preview.style.display = "block";
@@ -1200,9 +1219,11 @@ function setupNode(node) {
 app.registerExtension({
   name: "DeepSeekAPI.ImageCompositorHelper",
   nodeCreated(node) {
-    if (node?.comfyClass !== NODE_TYPE) return;
+    const type = node?.comfyClass ?? node?.type;
+    if (type !== NODE_TYPE) return;
     try {
       setupNode(node);
+      console.log("[ICX] \u5408\u6210\u5668\u8282\u70B9\u5DF2\u6302\u8F7D", node?.id);
     } catch (error) {
       console.error("[ImageCompositorHelper] setup failed", error);
     }
