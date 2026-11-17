@@ -206,10 +206,11 @@ function setupNode(node: any) {
       status.textContent = failed
         ? "图层预览保存失败：" + payload.errors![0]
         : "没有收到图层数据（见控制台）";
-    } else if (payload?.stale?.[0]) {
-      status.textContent = "输入已变化：布局已回退默认，打开可重新摆";
     } else {
-      status.textContent = "已载入 " + count + " 层 · 画布 " + (payload?.canvas ?? []).join("×");
+      const size = (payload?.canvas ?? []).join("×");
+      status.textContent = payload?.stale?.[0]
+        ? "输入已变化：已回退默认布局 · 画布 " + size
+        : "已载入 " + count + " 层 · 画布 " + size;
     }
     if (!payload?.images?.length && payload?.errors?.length) {
       status.textContent = "预览生成失败：" + payload.errors[0];

@@ -1503,10 +1503,9 @@ function setupNode(node) {
     const failed = payload?.errors?.length ?? 0;
     if (!count) {
       status.textContent = failed ? "\u56FE\u5C42\u9884\u89C8\u4FDD\u5B58\u5931\u8D25\uFF1A" + payload.errors[0] : "\u6CA1\u6709\u6536\u5230\u56FE\u5C42\u6570\u636E\uFF08\u89C1\u63A7\u5236\u53F0\uFF09";
-    } else if (payload?.stale?.[0]) {
-      status.textContent = "\u8F93\u5165\u5DF2\u53D8\u5316\uFF1A\u5E03\u5C40\u5DF2\u56DE\u9000\u9ED8\u8BA4\uFF0C\u6253\u5F00\u53EF\u91CD\u65B0\u6446";
     } else {
-      status.textContent = "\u5DF2\u8F7D\u5165 " + count + " \u5C42 \xB7 \u753B\u5E03 " + (payload?.canvas ?? []).join("\xD7");
+      const size = (payload?.canvas ?? []).join("\xD7");
+      status.textContent = payload?.stale?.[0] ? "\u8F93\u5165\u5DF2\u53D8\u5316\uFF1A\u5DF2\u56DE\u9000\u9ED8\u8BA4\u5E03\u5C40 \xB7 \u753B\u5E03 " + size : "\u5DF2\u8F7D\u5165 " + count + " \u5C42 \xB7 \u753B\u5E03 " + size;
     }
     if (!payload?.images?.length && payload?.errors?.length) {
       status.textContent = "\u9884\u89C8\u751F\u6210\u5931\u8D25\uFF1A" + payload.errors[0];

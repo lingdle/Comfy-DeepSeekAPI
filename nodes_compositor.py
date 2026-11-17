@@ -34,7 +34,8 @@ LOG = logging.getLogger("DeepSeekAPI")
 
 NODE_ID = "ImageCompositorHelper"
 
-PREVIEW_SIDE = 1024  # 前端画布用的预览图长边上限（合成仍用全分辨率）
+PREVIEW_SIDE = 1024  # 编辑器里每层缩略图的长边上限
+COMPOSITE_PREVIEW_LIMIT = 4096  # 合成预览的上限：这个尺寸以内按原尺寸存，原生预览标注才等于画布
 
 
 def _frame_size(tensor):
@@ -211,7 +212,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
             import torch
 
             preview = _save_temp(
-                to_pil(torch.cat([rgb, alpha], dim=-1), PREVIEW_SIDE),
+                to_pil(torch.cat([rgb, alpha], dim=-1), COMPOSITE_PREVIEW_LIMIT),
                 "rgba_composite",
             )
         except Exception as exc:  # pragma: no cover - 合成预览失败不影响输出
