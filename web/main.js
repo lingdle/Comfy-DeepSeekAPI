@@ -1483,7 +1483,7 @@ function setupNode(node) {
   node.getExtraMenuOptions = function(canvas, options) {
     const result = originalMenu?.apply(this, arguments);
     options.push({
-      content: "\u6253\u5F00\u56FE\u5C42\u5408\u6210\u5668",
+      content: "\u6253\u5F00\u5408\u6210\u5668",
       callback: () => {
         openEditor(node).catch((error) => {
           status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);

@@ -183,7 +183,7 @@ function setupNode(node: any) {
   node.getExtraMenuOptions = function (canvas: any, options: any[]) {
     const result = originalMenu?.apply(this, arguments);
     options.push({
-      content: "打开图层合成器",
+      content: "打开合成器",
       callback: () => {
         openEditor(node).catch((error: any) => {
           status.textContent = "打开失败：" + (error?.message ?? error);

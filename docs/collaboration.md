@@ -15,7 +15,7 @@
 | example/workflows/ | 示例工作流（json）+ 同名缩略图（jpg） |
 | example/cases/ | 案例：配合节点使用的提示词与说明（ASCII 文件名） |
 | web/ + frontend/ | 图层合成器的前端：web/main.js 是 esbuild 产物（提交进仓库），frontend/src 是 TS 源码 |
-| nodes_compositor.py + core/compositor.py · core/render.py | 图层合成助手：布局/指纹（纯函数）与 torch 渲染 |
+| nodes_compositor.py + core/compositor.py · core/render.py | 图层合成器：布局/指纹（纯函数）与 torch 渲染 |
 | assets/ | 图标、横幅、赞助码 |
 | tests/run_tests.py | 单元测试（桩件模拟 ComfyUI，不联网） |
 | tools/ | 开发工具：审计、示例校验、打包、API 兜底推送 |

@@ -20,19 +20,19 @@ Five nodes under Add Node → DeepSeekAPI:
 
 | Node | What it does | Outputs |
 |---|---|---|
-| DeepSeek Model API | Chat + image understanding (multi-slot image_slots or images batch, max_images caps how many are sent) + optional web tools | text / sources / json |
-| DeepSeek Search API | Web search; the query syntax is built from the filter widgets | text / json |
+| DeepSeek Model API | Chat + image understanding (`image_slots` autogrow or an `images` batch, capped by `max_images`) + optional web tools | text / reasoning / usage / sources / json |
+| DeepSeek Search API | Web search; the query syntax is built from the filter widgets | text / usage / json |
 | DeepSeek Balance API | Account balance | text / json |
-| Text2SVG | Pulls the SVG out of model text and returns ComfyUI's SVG type; renders a preview on the node | svg / svg_text / agent_prompt |
-| Layer Compositor | Stacks transparent images (autogrow image_0…7) with a built-in canvas editor: drag, resize, rotate, snap, multi-select, reorder, undo | image / mask / layout |
+| Text2SVG | Extracts the SVG from model text and returns ComfyUI's SVG type; previews it on the node | svg / svg_text / agent_prompt |
+| Layer Compositor | Stacks transparent images (autogrow `image_0…7`) with a built-in canvas editor: drag, resize, rotate, snap, multi-select, reorder, undo | image / mask / layout |
 
 Defaults favor cost and latency (thinking off, low detail, 5 images), but output length is not throttled: max_tokens defaults to the API ceiling 384K (393216). Images are sent at their original size — only images with a side over 4096 px are downscaled, and the API resizes large images to ~1300×1300 anyway.
 
-Both image inputs can be used at once: click + on 多图插槽 (image_slots) to add slots, and/or feed a batch into images. Slots are sent first, everything is merged into one request and capped at max_images.
+Both image inputs accept data at once: click + on the multi-image slots group (`image_slots`, 多图插槽) to add slots, and/or feed a batch into `images`. Slot images go first, everything is merged into one request and capped by `max_images`.
 
 Ask the model for an SVG (e.g. "output only one SVG in a fenced svg code block") and wire its text into Text2SVG: the node writes the file into the output folder and previews it in the node, and the svg socket feeds any SVG input.
 
-**Layer Compositor**: wire transparent layers into image_0 … image_7 (4-channel input uses channel 4 as alpha), run once, then click 打开合成器. Arrange layers on the canvas (drag / 8 handles / rotate / snap / multi-select / reorder / undo), hit 锁定并保存, run again — the node composites by the saved layout and outputs a 3-channel IMAGE, a MASK and the layout JSON.
+**Layer Compositor**: wire transparent layers into `image_0` … `image_7` (a 4-channel input uses channel 4 as alpha), run once, then click Open Compositor (打开合成器). Arrange layers on the canvas (drag / 8 handles / rotate / snap / multi-select / reorder / undo), then hit Lock & Save & Run (锁定并保存并运行): the node saves the layout, queues itself and outputs a 3-channel IMAGE, a MASK and the layout JSON.
 
 ## Example
 
@@ -80,19 +80,19 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 
 | 节点 | 作用 | 输出 |
 |---|---|---|
-| DeepSeek 模型 API | 文本对话 + 图片识别（多图插槽 image_slots 或 images batch，张数由 max_images 控制）+ 可选联网 | text / sources / json |
-| DeepSeek 搜索 API | 网页搜索，语法由筛选控件自动拼 | text / json |
+| DeepSeek 模型 API | 文本对话 + 图片识别（`image_slots` 多图插槽或 `images` batch，张数由 `max_images` 控制）+ 可选联网 | text / reasoning / usage / sources / json |
+| DeepSeek 搜索 API | 网页搜索，语法由筛选控件自动拼 | text / usage / json |
 | DeepSeek 额度 API | 查询账户余额 | text / json |
 | Text2SVG | 从模型文本里取出 SVG，输出 ComfyUI 的 SVG 类型，并在节点上预览 | svg / svg_text / agent_prompt |
-| 图层合成助手 | 把带透明的图按顺序叠起来（autogrow image_0…7），内置画布编辑器：拖动、缩放、旋转、吸附对齐、多选、层级重排、撤销 | image / mask / layout |
+| 图层合成器 | 把带透明的图按顺序叠起来（autogrow `image_0…7`），内置画布编辑器：拖动、缩放、旋转、吸附对齐、多选、层级重排、撤销 | image / mask / layout |
 
 默认参数偏省钱、快（思考关闭、低精度、默认发 5 张），但**不限制输出长度**：max_tokens 默认取接口上限 384K（393216）。图片按原尺寸发送，只有长边超过 4096 px 才兜底缩小；服务端本来就会把大图缩到约 1300×1300。
 
-两路图片可同时用：在「多图插槽」点 + 加插槽，和/或给 images 接一个 batch；插槽里的图排在前面，合并成一次请求，总张数受 max_images 限制。
+两路图片可同时接：在「多图插槽」（`image_slots`）点 + 加插槽，和/或给 `images` 接一个 batch；插槽里的图排在前面，合并成一次请求，总张数受 `max_images` 限制。
 
-让模型输出 SVG（例如要求"只输出一个 SVG，放在 svg 代码块里"），把模型的 text 接到 Text2SVG：节点会把文件写到 output 目录、在节点上直接预览，svg 输出可接任何 SVG 输入。
+让模型输出 SVG（例如要求"只输出一个 SVG，放在 svg 代码块里"），把模型的 `text` 接到 Text2SVG：节点会把文件写到 output 目录、在节点上直接预览，`svg` 输出可接任何 SVG 输入。
 
-**图层合成助手**：把带透明的图层接到 image_0 … image_7（4 通道输入用第 4 通道当 alpha），先运行一次，再点「打开合成器」。在画布里拖动 / 八点缩放 / 旋转 / 吸附对齐 / 多选 / 调层级 / 撤销，点「锁定并保存」后再运行，节点按存档合成，输出 3 通道 IMAGE + MASK + 布局 JSON。
+**图层合成器**：把带透明的图层接到 `image_0` … `image_7`（4 通道输入用第 4 通道当 alpha），先运行一次，再点「打开合成器」。在画布里拖动 / 八点缩放 / 旋转 / 吸附对齐 / 多选 / 调层级 / 撤销，点「锁定并保存并运行」——节点保存布局后自动排队执行，输出 3 通道 IMAGE + MASK + 布局 JSON。
 
 ### 示例
 
@@ -105,7 +105,7 @@ Special thanks to **DeepSeek** for the stable and easy-to-use API.
 ### 案例
 
 - [FL2VA 导演 Agent](example/cases/fl2va-director-agent.md)：把首/尾两帧 + 一段文本意图变成 MiniMax H3 FL2VA 分镜的中文系统提示词。模型节点接两张图、把系统提示词粘进去即可；默认已按长输出配置。原始提示词：[fl2va-director-system-prompt.txt](example/cases/fl2va-director-system-prompt.txt)
-- [IndexTTS 导演提示词](example/cases/indextts-director-prompt.md)：把意图/梗概改写成带段标语法的配音剧本；模型节点里当 system_prompt 用，输出直接喂 TTS 节点。
+- [IndexTTS 导演提示词](example/cases/indextts-director-prompt.md)：把意图/梗概改写成带段标语法的配音剧本；粘进模型节点的 `system_prompt`，输出直接喂 TTS 节点。
 - [SVG 生成 Agent](example/cases/svg-generator-agent.md)：专家级系统提示词，把一句话需求变成自包含 SVG（硬约束 + 绘制流程 + 12 项质检）。接到模型节点，text 再接 Text2SVG；也可以直接用 Text2SVG 的 `agent_prompt` 输出。原始提示词：[svg-generator-system-prompt.txt](example/cases/svg-generator-system-prompt.txt)
 
 ### 支持这个项目

@@ -1,4 +1,4 @@
-"""图层合成助手（LayerCompositor，V3 schema）。
+"""图层合成器（LayerCompositor，V3 schema）。
 
 连线：autogrow 接受若干 IMAGE（4 通道把第 4 通道当 alpha），按索引叠成图层；
 前端编辑器在画布上摆位置/大小/旋转/层级，锁定后写回 layout_json；
@@ -62,7 +62,7 @@ class LayerCompositorNode(io.ComfyNode):
     def define_schema(cls) -> io.Schema:
         return io.Schema(
             node_id=NODE_ID,
-            display_name="图层合成助手",
+            display_name="图层合成器",
             category="DeepSeekAPI",
             # 输出就是合成结果，标记成输出节点：否则只连它一个时 ComfyUI 会报
             # “工作流未包含任何输出节点”，单节点 partial execution 也不认它

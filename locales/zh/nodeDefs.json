@@ -203,7 +203,7 @@
     }
   },
   "LayerCompositor": {
-    "display_name": "图层合成助手",
+    "display_name": "图层合成器",
     "description": "把若干张带透明的图按数组顺序叠成一张合成图：节点上点「打开合成器」，在画布里拖位置、改大小、旋转、调层级与不透明度，锁定保存后执行即得结果。4 通道输入把第 4 通道当 alpha，3 通道按不透明处理；输出 3 通道 IMAGE + MASK + 布局 JSON。",
     "inputs": {
       "images": {

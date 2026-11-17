@@ -32,7 +32,7 @@ from .nodes_search import DeepSeekSearchNode
 from .nodes_compositor import LayerCompositorNode
 from .nodes_svg import DeepSeekText2SVGNode
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 
 class DeepSeekExtension(ComfyExtension):
