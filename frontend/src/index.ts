@@ -106,7 +106,9 @@ function setupNode(node: any) {
   if (node._icx) return;
   const { container, preview, button, status } = buildContainer(node);
   node._icx = { payload: null, editor: null, container, preview, button, status };
-  node.addDOMWidget("compositor_preview", "compositor", container, { serialize: false });
+  // 注意：widget type 不能叫 "compositor" —— 那是内置 CompositorWidget 的保留类型，
+  // 撞名会让 ComfyUI 用一个空的官方预览器顶掉我们的 DOM widget。
+  node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
 
   hideWidget(findWidget(node, WIDGET_NAME));
 
@@ -115,6 +117,21 @@ function setupNode(node: any) {
       status.textContent = "打开失败：" + (error?.message ?? error);
       console.error("[ImageCompositorHelper]", error);
     });
+  };
+
+  const originalMenu = node.getExtraMenuOptions;
+  node.getExtraMenuOptions = function (canvas: any, options: any[]) {
+    const result = originalMenu?.apply(this, arguments);
+    options.push({
+      content: "打开图层合成器",
+      callback: () => {
+        openEditor(node).catch((error: any) => {
+          status.textContent = "打开失败：" + (error?.message ?? error);
+          console.error("[ImageCompositorHelper]", error);
+        });
+      },
+    });
+    return result;
   };
 
   const originalExecuted = node.onExecuted;

@@ -1,6 +1,12 @@
 # 更新记录
 
-当前版本：**1.3.1**（2026-11-17）
+当前版本：**1.3.2**（2026-11-17）
+
+**1.3.2**（2026-11-17）
+
+- 修复：「打开合成器」点不动。根因是 DOM widget 的 type 取了 `compositor`——那是 ComfyUI 内置 CompositorWidget 的保留类型（widgetMap 里 `case 'compositor'`），于是官方那个空预览器把我们的控件顶掉了
+- DOM widget 类型改为命名空间化的 `deepseek_compositor_ui`，名字 `icx_preview`
+- 另加右键菜单「打开图层合成器」，DOM 控件万一被别的扩展挤掉还有入口
 
 **1.3.1**（2026-11-17）
 

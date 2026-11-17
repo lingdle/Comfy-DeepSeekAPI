@@ -1186,13 +1186,27 @@ function setupNode(node) {
   if (node._icx) return;
   const { container, preview, button, status } = buildContainer(node);
   node._icx = { payload: null, editor: null, container, preview, button, status };
-  node.addDOMWidget("compositor_preview", "compositor", container, { serialize: false });
+  node.addDOMWidget("icx_preview", "deepseek_compositor_ui", container, { serialize: false });
   hideWidget(findWidget(node, WIDGET_NAME));
   button.onclick = () => {
     openEditor(node).catch((error) => {
       status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);
       console.error("[ImageCompositorHelper]", error);
     });
+  };
+  const originalMenu = node.getExtraMenuOptions;
+  node.getExtraMenuOptions = function(canvas, options) {
+    const result = originalMenu?.apply(this, arguments);
+    options.push({
+      content: "\u6253\u5F00\u56FE\u5C42\u5408\u6210\u5668",
+      callback: () => {
+        openEditor(node).catch((error) => {
+          status.textContent = "\u6253\u5F00\u5931\u8D25\uFF1A" + (error?.message ?? error);
+          console.error("[ImageCompositorHelper]", error);
+        });
+      }
+    });
+    return result;
   };
   const originalExecuted = node.onExecuted;
   node.onExecuted = function(output) {
