@@ -1172,6 +1172,7 @@ def test_text2svg_schema():
     schema = SVGN.DeepSeekText2SVGNode.define_schema()
     assert schema.node_id == "DeepSeekAPI_Text2SVG"
     assert schema.category == "DeepSeekAPI"
+    assert schema.is_output_node is True
     assert [item["id"] for item in schema.inputs] == ["text", "preview"]
     assert schema.inputs[0]["multiline"] is True
     assert schema.inputs[1]["default"] is True

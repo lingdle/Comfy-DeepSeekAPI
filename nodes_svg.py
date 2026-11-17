@@ -59,6 +59,8 @@ class DeepSeekText2SVGNode(io.ComfyNode):
             node_id=NODE_ID,
             display_name="Text2SVG 文本转 SVG",
             category="DeepSeekAPI",
+            # 输出就是最终结果，标成输出节点：选中时会出现运行按钮，也能单独执行
+            is_output_node=True,
             description=(
                 "把 DeepSeek 输出文本里的 SVG 提取出来，转成 ComfyUI 的 SVG 类型。"
                 "支持 " + FENCE + "svg 代码块、无语言标记的代码块、正文里直接夹的 <svg>…</svg>；"
