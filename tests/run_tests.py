@@ -396,6 +396,38 @@ def test_client_gives_up_after_retries():
 
 
 # --------------------------------------------------------------------- 节点
+def expect_error(fn, *args, **kwargs):
+    """调用节点，断言它报错，并返回错误文案（应当是中文可读的）。"""
+    try:
+        result = fn(*args, **kwargs)
+    except Exception as exc:  # noqa: BLE001 - 测试就是要有异常
+        return str(exc)
+    raise AssertionError("应当报错，实际返回：%r" % (result,))
+
+
+@test
+def test_guarded_wraps_unexpected_errors():
+    from dsapi.core.friendly import NodeError, guarded
+
+    class Boom:
+        @classmethod
+        @guarded
+        def execute(cls):
+            raise KeyError("boom")
+
+    message = expect_error(Boom.execute)
+    assert "KeyError" in message and "详细堆栈" in message, message
+
+    class Known:
+        @classmethod
+        @guarded
+        def execute(cls):
+            raise ValueError("参数不对")
+
+    assert expect_error(Known.execute) == "参数不对"
+    assert issubclass(NodeError, RuntimeError)
+
+
 @test
 def test_schema_structure():
     schema = NS.DeepSeekModelNode.define_schema()
@@ -689,16 +721,13 @@ def test_execute_rejects_empty_prompt():
     original = NS.DeepSeekClient
     NS.DeepSeekClient = FakeClient(response={"choices": []})
     try:
-        try:
-            NS.DeepSeekModelNode.execute(
-                model="deepseek-flash", api_key="sk-test",
-                base_url="https://api.deepseek.com",
-                system_prompt="", user_prompt="   ",
-            )
-        except ERR.DeepSeekAPIError as exc:
-            assert "至少" in str(exc)
-            return
-        raise AssertionError("空提示词应当报错")
+        message = expect_error(
+            NS.DeepSeekModelNode.execute,
+            model="deepseek-flash", api_key="sk-test",
+            base_url="https://api.deepseek.com",
+            system_prompt="", user_prompt="   ",
+        )
+        assert "至少" in message, message
     finally:
         NS.DeepSeekClient = original
 
@@ -708,17 +737,14 @@ def test_execute_rejects_pro_with_image():
     original_encode = NS.tensor_to_data_urls
     NS.tensor_to_data_urls = lambda tensor, max_images=5, max_side=1024, quality=85: ["data:image/jpeg;base64,AAA"]
     try:
-        try:
-            NS.DeepSeekModelNode.execute(
-                model="deepseek-v4-pro", api_key="sk-test",
-                base_url="https://api.deepseek.com",
-                system_prompt="", user_prompt="看这张图",
-                images="tensor-slot",
-            )
-        except ERR.DeepSeekAPIError as exc:
-            assert "不支持图片" in str(exc)
-            return
-        raise AssertionError("v4-pro 带图应当报错")
+        message = expect_error(
+            NS.DeepSeekModelNode.execute,
+            model="deepseek-v4-pro", api_key="sk-test",
+            base_url="https://api.deepseek.com",
+            system_prompt="", user_prompt="看这张图",
+            images="tensor-slot",
+        )
+        assert "不支持图片" in message, message
     finally:
         NS.tensor_to_data_urls = original_encode
 
@@ -851,23 +877,17 @@ def test_search_rejects_empty_and_long_query():
     original = SEARCH.DeepSeekClient
     SEARCH.DeepSeekClient = FakeClient(response={"results": []})
     try:
-        try:
-            SEARCH.DeepSeekSearchNode.execute(
-                query="   ", api_key="sk-test", base_url="https://api.deepseek.com"
-            )
-        except ERR.DeepSeekAPIError as exc:
-            assert "搜索词为空" in str(exc)
-        else:
-            raise AssertionError("空 query 应当报错")
+        empty = expect_error(
+            SEARCH.DeepSeekSearchNode.execute,
+            query="   ", api_key="sk-test", base_url="https://api.deepseek.com",
+        )
+        assert "搜索词为空" in empty, empty
 
-        try:
-            SEARCH.DeepSeekSearchNode.execute(
-                query="x" * 200, api_key="sk-test", base_url="https://api.deepseek.com"
-            )
-        except ERR.DeepSeekAPIError as exc:
-            assert "超过上限" in str(exc)
-        else:
-            raise AssertionError("超长 query 应当报错")
+        too_long = expect_error(
+            SEARCH.DeepSeekSearchNode.execute,
+            query="x" * 200, api_key="sk-test", base_url="https://api.deepseek.com",
+        )
+        assert "超过上限" in too_long, too_long
     finally:
         SEARCH.DeepSeekClient = original
 
@@ -902,19 +922,16 @@ def test_model_web_tools_payload():
             {"type": "deepseek_read_url"},
         ]
 
-        try:
-            NS.DeepSeekModelNode.execute(
-                model="deepseek-v4-pro",
-                api_key="sk-test",
-                base_url="https://api.deepseek.com",
-                system_prompt="",
-                user_prompt="q",
-                web_search=True,
-            )
-        except ERR.DeepSeekAPIError as exc:
-            assert "deepseek-flash" in str(exc)
-        else:
-            raise AssertionError("v4-pro + 联网工具应当报错")
+        blocked = expect_error(
+            NS.DeepSeekModelNode.execute,
+            model="deepseek-v4-pro",
+            api_key="sk-test",
+            base_url="https://api.deepseek.com",
+            system_prompt="",
+            user_prompt="q",
+            web_search=True,
+        )
+        assert "deepseek-flash" in blocked, blocked
     finally:
         NS.DeepSeekClient = original
 
@@ -1217,12 +1234,8 @@ def test_text2svg_execute_without_preview():
 
 @test
 def test_text2svg_rejects_text_without_svg():
-    try:
-        SVGN.DeepSeekText2SVGNode.execute(text="只有文字，没有图")
-    except SVGUTIL.SVGNotFound as exc:
-        assert "SVG" in str(exc)
-    else:
-        raise AssertionError("应当抛出 SVGNotFound")
+    message = expect_error(SVGN.DeepSeekText2SVGNode.execute, text="只有文字，没有图")
+    assert "SVG" in message, message
 
 
 # ------------------------------------------------------- ImageCompositorHelper
@@ -1299,12 +1312,8 @@ def test_compositor_schema():
 
 @test
 def test_compositor_rejects_empty_inputs():
-    try:
-        COMP.ImageCompositorHelperNode.execute(images={})
-    except ValueError as exc:
-        assert "图层" in str(exc)
-    else:
-        raise AssertionError("空输入应当报错")
+    message = expect_error(COMP.ImageCompositorHelperNode.execute, images={})
+    assert "图层" in message, message
 
 
 # ------------------------------------------------------------------ i18n 测试

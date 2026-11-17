@@ -15,6 +15,7 @@ from .core.config import (
     normalize_base_url,
     resolve_api_key,
 )
+from .core.friendly import guarded
 
 LOG = logging.getLogger("DeepSeekAPI")
 
@@ -107,6 +108,7 @@ class DeepSeekBalanceNode(io.ComfyNode):
         )
 
     @classmethod
+    @guarded
     def execute(cls, api_key, base_url, currency="auto"):
         key = resolve_api_key(api_key)
         endpoint = normalize_base_url(base_url)

@@ -22,6 +22,7 @@ from .core.compositor import (
     parse_layout,
     sorted_slots,
 )
+from .core.friendly import guarded
 from .core.render import (
     composite,
     prepare_layer,
@@ -141,6 +142,7 @@ class ImageCompositorHelperNode(io.ComfyNode):
         )
 
     @classmethod
+    @guarded
     def execute(
         cls,
         images=None,

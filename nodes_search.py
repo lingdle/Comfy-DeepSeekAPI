@@ -18,6 +18,7 @@ from .core.config import (
 from .core.errors import DeepSeekAPIError
 from .core.searchquery import build_query
 from .core.websearch import format_search_results, format_search_usage
+from .core.friendly import guarded
 
 LOG = logging.getLogger("DeepSeekAPI")
 
@@ -157,6 +158,7 @@ class DeepSeekSearchNode(io.ComfyNode):
         )
 
     @classmethod
+    @guarded
     def execute(
         cls,
         question="",

@@ -93,7 +93,14 @@ tools/audit.py 与测试会拦截其中大部分遗漏，但不要依赖它们�
 
 省钱、快、开箱可用：deepseek-flash、thinking=close、max_tokens=1024、图片长边 1024、搜索 count=5、lang=zh,en。
 
-### 5.5 兼容与版本
+### 5.5 错误提示
+
+- 节点 `execute` 一律用 `@guarded`（core/friendly.py）包一层：完整堆栈只进日志（`LOG.exception`），
+  抛给 ComfyUI 的是清洗过的短异常
+- 已知错误（`DeepSeekAPIError` / `ConfigError` / `ValueError`）消息必须是能直接给用户看的中文
+- 未知异常由 `NodeError` 统一替换成「类型 + 详细堆栈见控制台日志」，避免把第三方库堆栈甩到界面上
+
+### 5.6 兼容与版本
 
 - 改变控件顺序会让旧工作流失效，交付时必须提示"删掉旧节点重拖"。
 - Registry 版本不可变：已发布的版本号不能复用，每次发布都要递增。

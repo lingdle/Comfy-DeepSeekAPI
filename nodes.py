@@ -21,6 +21,7 @@ from .core.config import (
 from .core.errors import DeepSeekAPIError
 from .core.imaging import tensor_to_data_urls
 from .core.pricing import SEARCH_PRICE_PER_CALL, estimate_cost, format_usage
+from .core.friendly import guarded
 
 LOG = logging.getLogger("DeepSeekAPI")
 
@@ -241,6 +242,7 @@ class DeepSeekModelNode(io.ComfyNode):
         )
 
     @classmethod
+    @guarded
     def execute(
         cls,
         images=None,

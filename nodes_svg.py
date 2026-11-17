@@ -11,6 +11,7 @@ from io import BytesIO
 from comfy_api.latest import io
 
 from .core.svg import FENCE, SVGNotFound, extract_svg, save_preview
+from .core.friendly import guarded
 
 LOG = logging.getLogger("DeepSeekAPI")
 
@@ -98,6 +99,7 @@ class DeepSeekText2SVGNode(io.ComfyNode):
         )
 
     @classmethod
+    @guarded
     def execute(cls, text="", preview=True) -> io.NodeOutput:
         markup = extract_svg(text)
         if not markup:
