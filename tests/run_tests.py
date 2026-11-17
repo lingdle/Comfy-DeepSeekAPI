@@ -1178,7 +1178,7 @@ def test_text2svg_schema():
     assert [item["display_name"] for item in schema.outputs] == [
         "svg",
         "svg_text",
-        "system_prompt",
+        "agent_prompt",
     ]
     assert schema.outputs[0]["type"] == "SVG"
 
@@ -1233,9 +1233,12 @@ def test_text2svg_execute_without_preview():
 
 
 @test
-def test_text2svg_rejects_text_without_svg():
-    message = expect_error(SVGN.DeepSeekText2SVGNode.execute, text="只有文字，没有图")
-    assert "SVG" in message, message
+def test_text2svg_without_svg_still_returns_agent_prompt():
+    result = SVGN.DeepSeekText2SVGNode.execute(text="只有文字，没有图")
+    assert result.results[1] == ""
+    assert len(result.results[2]) > 1000
+    assert "输出契约" in result.results[2]
+    assert "data-empty" in result.results[0].data[0].getvalue().decode("utf-8")
 
 
 # ------------------------------------------------------- ImageCompositorHelper

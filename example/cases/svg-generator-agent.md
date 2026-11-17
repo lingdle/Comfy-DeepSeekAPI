@@ -7,7 +7,7 @@
 
 ## 怎么用
 
-1. 把 `svg-generator-system-prompt.txt` 全文粘贴到「DeepSeek 模型 API」的 `system_prompt`（也可以直接用 Text2SVG 的 `system_prompt` 输出接过去）。
+1. 把 `svg-generator-system-prompt.txt` 全文粘贴到「DeepSeek 模型 API」的 `system_prompt`（也可以直接用 Text2SVG 的 `agent_prompt` 输出接过去）。
 2. 用户提示词写需求，例如：`画一个扁平风格的矢量小鸟图标，方形，深色背景`。
 3. 模型的 `text` 接到 Text2SVG：节点自动剥掉代码块围栏、补 `xmlns`，写到 output 目录并在节点上预览。
 4. 提示词已约定"只输出一个 svg 代码块"，所以不需要再额外要求"不要解释"。

@@ -198,7 +198,7 @@
         "tooltip": "Extracted SVG source, handy for copying or debugging"
       },
       "2": {
-        "tooltip": "Bundled expert SVG generation prompt (example/cases/svg-generator-agent.md); wire it into the model node's system_prompt"
+        "tooltip": "Bundled expert SVG generation agent prompt (example/cases/svg-generator-agent.md); wire it into the model node's system_prompt. Still emitted when no SVG is found"
       }
     }
   },

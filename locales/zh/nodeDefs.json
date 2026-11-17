@@ -198,7 +198,7 @@
         "tooltip": "提取出来的 SVG 源码，便于复制或排查"
       },
       "2": {
-        "tooltip": "随包附带的专家级 SVG 生成提示词（example/cases/svg-generator-agent.md），可直接接到模型节点的 system_prompt"
+        "tooltip": "随包附带的专家级 SVG 生成 agent 提示词（example/cases/svg-generator-agent.md），可直接接到模型节点的 system_prompt；没提取到 SVG 时也会照常输出"
       }
     }
   },

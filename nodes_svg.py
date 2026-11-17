@@ -17,6 +17,12 @@ LOG = logging.getLogger("DeepSeekAPI")
 
 NODE_ID = "DeepSeekAPI_Text2SVG"
 
+# 没提取到 SVG 时输出的占位（1×1，保证 SVG 类型契约成立，下游不会拿到 None）
+EMPTY_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" '
+    'viewBox="0 0 1 1" data-empty="true"></svg>'
+)
+
 PROMPT_HINT = (
     "例如：" + "请只输出一个 SVG，放在 " + FENCE + "svg 代码块里，不要输出别的解释"
 )
@@ -56,7 +62,8 @@ class DeepSeekText2SVGNode(io.ComfyNode):
             description=(
                 "把 DeepSeek 输出文本里的 SVG 提取出来，转成 ComfyUI 的 SVG 类型。"
                 "支持 " + FENCE + "svg 代码块、无语言标记的代码块、正文里直接夹的 <svg>…</svg>；"
-                "多个 SVG 只取第一个。预览：写一份到 output 目录并在节点上显示。"
+                "多个 SVG 只取第一个。没找到 SVG 也不报错：svg_text 为空，agent_prompt 照常输出。"
+                "预览：找到时写一份到 output 目录并在节点上显示。"
             ),
             search_aliases=[
                 "svg",
@@ -92,8 +99,8 @@ class DeepSeekText2SVGNode(io.ComfyNode):
                     tooltip="提取出来的 SVG 源码，便于复制或排查",
                 ),
                 io.String.Output(
-                    display_name="system_prompt",
-                    tooltip="随包附带的专家级 SVG 生成提示词，可直接接到模型节点的 system_prompt",
+                    display_name="agent_prompt",
+                    tooltip="随包附带的专家级 SVG 生成 agent 提示词，可直接接到模型节点的 system_prompt",
                 ),
             ],
         )
@@ -101,11 +108,18 @@ class DeepSeekText2SVGNode(io.ComfyNode):
     @classmethod
     @guarded
     def execute(cls, text="", preview=True) -> io.NodeOutput:
+        prompt = recommended_system_prompt()
         markup = extract_svg(text)
+
         if not markup:
-            raise SVGNotFound(
-                "文本里没有找到 SVG：需要 <svg>…</svg> 或 " + FENCE + "svg 代码块。" + PROMPT_HINT
-            )
+            # 没有 SVG 不算失败：正常把 agent 提示词送出去，方便直接接到模型节点
+            LOG.info("Text2SVG：文本里没有 SVG，只输出 agent prompt")
+            ui = {"text": [prompt]} if prompt else None
+            empty = EMPTY_SVG
+            try:
+                return io.NodeOutput(_svg_value(empty), "", prompt, ui=ui)
+            except TypeError:  # pragma: no cover
+                return io.NodeOutput(_svg_value(empty), "", prompt)
 
         entry = None
         if preview:
@@ -117,7 +131,6 @@ class DeepSeekText2SVGNode(io.ComfyNode):
         ui = {"images": [entry]} if entry else {"text": [markup]}
 
         value = _svg_value(markup)
-        prompt = recommended_system_prompt()
         LOG.info("Text2SVG：%d 字节，预览=%s", len(markup), bool(entry))
 
         try:
