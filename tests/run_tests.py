@@ -1281,6 +1281,7 @@ def test_compositor_schema():
     schema = COMP.ImageCompositorHelperNode.define_schema()
     assert schema.node_id == "ImageCompositorHelper"
     assert schema.category == "DeepSeekAPI"
+    assert schema.is_output_node is True
     assert [item["id"] for item in schema.inputs] == [
         "images",
         "canvas_width",

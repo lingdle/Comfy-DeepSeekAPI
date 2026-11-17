@@ -62,6 +62,9 @@ class ImageCompositorHelperNode(io.ComfyNode):
             node_id=NODE_ID,
             display_name="图层合成助手",
             category="DeepSeekAPI",
+            # 输出就是合成结果，标记成输出节点：否则只连它一个时 ComfyUI 会报
+            # “工作流未包含任何输出节点”，单节点 partial execution 也不认它
+            is_output_node=True,
             description=(
                 "把若干张带透明的图按数组顺序叠成一张合成图：节点上点「打开合成器」，"
                 "在画布里拖位置、改大小、旋转、调层级与不透明度，锁定保存后执行即得结果。"
